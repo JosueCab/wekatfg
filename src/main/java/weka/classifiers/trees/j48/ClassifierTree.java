@@ -24,6 +24,7 @@ package weka.classifiers.trees.j48;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Stack;
 
 import weka.core.Capabilities;
 import weka.core.CapabilitiesHandler;
@@ -68,6 +69,21 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 
   /** The id for the node. */
   protected int m_id;
+  
+  /** True if the tree is to be pruned. */
+  protected boolean m_pruneTheTree = false;
+  
+  /** True if the tree is to be collapsed. */
+  protected boolean m_collapseTheTree = false;
+
+  /** The confidence factor for pruning. */
+  protected float m_CF = 0.25f;
+
+  /** Is subtree raising to be performed? */
+  protected boolean m_subtreeRaising = true;
+
+  /** Cleanup after the tree has been built. */
+  protected boolean m_cleanup = true;
 
   /**
    * For getting a unique ID when outputting the tree (hashcode isn't guaranteed
@@ -153,34 +169,74 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
    * @param keepData is training data to be kept?
    * @throws Exception if something goes wrong
    */
+  // ITERATIVE
+  /*
+  public void buildTree(Instances data, boolean keepData) throws Exception {
+	    Stack<ClassifierTree> stack = new Stack<>();
+	    stack.push(this); // Añadimos el árbol actual a la pila
+	    while (!stack.isEmpty()) {
+	        ClassifierTree current = stack.pop();
+	        Instances[] localInstances;
+	        if (keepData) {
+	            current.m_train = data;
+	        }
+	        current.m_test = null;
+	        current.m_isLeaf = false;
+	        current.m_isEmpty = false;
+	        current.m_sons = null;
+	        current.m_localModel = current.m_toSelectModel.selectModel(data); // error
+	        if (current.m_localModel.numSubsets() > 1) {
+	            localInstances = current.m_localModel.split(data);
+	            current.m_sons = new ClassifierTree[current.m_localModel.numSubsets()];
+	            for (int i = 0; i < current.m_sons.length; i++) {
+	                current.m_sons[i] = getNewTree(localInstances[i]);
+	                stack.push(current.m_sons[i]);
+	            }
+	            data = new Instances(localInstances[0], 0);
+	            for (int i = 1; i < localInstances.length; i++) {
+	                data.addAll(localInstances[i]);
+	            }
+	        } else {
+	            // leaf node
+	            current.m_isLeaf = true;
+	            if (Utils.eq(data.sumOfWeights(), 0)) {
+	                current.m_isEmpty = true;
+	            }
+	            //data = null; // comment out this line
+	        }
+
+	    }
+	}
+
+
+  */
   public void buildTree(Instances data, boolean keepData) throws Exception {
 
-    Instances[] localInstances;
-//probadno
-    if (keepData) {
-      m_train = data;
-    }
-    m_test = null;
-    m_isLeaf = false;
-    m_isEmpty = false;
-    m_sons = null;
-    m_localModel = m_toSelectModel.selectModel(data);
-    if (m_localModel.numSubsets() > 1) {
-      localInstances = m_localModel.split(data);
-      data = null;
-      m_sons = new ClassifierTree[m_localModel.numSubsets()];
-      for (int i = 0; i < m_sons.length; i++) {
-        m_sons[i] = getNewTree(localInstances[i]);
-        localInstances[i] = null;
-      }
-    } else {
-      m_isLeaf = true;
-      if (Utils.eq(data.sumOfWeights(), 0)) {
-        m_isEmpty = true;
-      }
-      data = null;
-    }
-  }
+	    Instances[] localInstances;
+	    if (keepData) {
+	      m_train = data;
+	    }
+	    m_test = null;
+	    m_isLeaf = false;
+	    m_isEmpty = false;
+	    m_sons = null;
+	    m_localModel = m_toSelectModel.selectModel(data);
+	    if (m_localModel.numSubsets() > 1) {
+	      localInstances = m_localModel.split(data);
+	      data = null;
+	      m_sons = new ClassifierTree[m_localModel.numSubsets()];
+	      for (int i = 0; i < m_sons.length; i++) {
+	        m_sons[i] = getNewTree(localInstances[i]);
+	        localInstances[i] = null;
+	      }
+	    } else {
+	      m_isLeaf = true;
+	      if (Utils.eq(data.sumOfWeights(), 0)) {
+	        m_isEmpty = true;
+	      }
+	      data = null;
+	    }
+	  }
 
   /**
    * Builds the tree structure with hold out set
