@@ -207,10 +207,12 @@ public class C45PruneableClassifierTree
     C45PruneableClassifierTree newTree = 
       new C45PruneableClassifierTree(m_toSelectModel, m_pruneTheTree, m_CF,
 				     m_subtreeRaising, m_cleanup, m_collapseTheTree);
-    newTree.buildTree((Instances)data, m_subtreeRaising || !m_cleanup);
+  // newTree.buildTree((Instances)data, m_subtreeRaising || !m_cleanup);
 
     return newTree;
   }
+  
+
 
   /**
    * Computes estimated errors for tree.

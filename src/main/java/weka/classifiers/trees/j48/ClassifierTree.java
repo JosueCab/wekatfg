@@ -170,46 +170,81 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
    * @throws Exception if something goes wrong
    */
   // ITERATIVE
-  /*
+
   public void buildTree(Instances data, boolean keepData) throws Exception {
-	    Stack<ClassifierTree> stack = new Stack<>();
-	    stack.push(this); // Añadimos el árbol actual a la pila
+	    Stack<Instances> stack = new Stack<>();
+	    stack.push(data);
+
 	    while (!stack.isEmpty()) {
-	        ClassifierTree current = stack.pop();
+	        Instances currentData = stack.pop();
+
 	        Instances[] localInstances;
 	        if (keepData) {
-	            current.m_train = data;
+	            m_train = currentData;
 	        }
-	        current.m_test = null;
-	        current.m_isLeaf = false;
-	        current.m_isEmpty = false;
-	        current.m_sons = null;
-	        current.m_localModel = current.m_toSelectModel.selectModel(data); // error
-	        if (current.m_localModel.numSubsets() > 1) {
-	            localInstances = current.m_localModel.split(data);
-	            current.m_sons = new ClassifierTree[current.m_localModel.numSubsets()];
-	            for (int i = 0; i < current.m_sons.length; i++) {
-	                current.m_sons[i] = getNewTree(localInstances[i]);
-	                stack.push(current.m_sons[i]);
-	            }
-	            data = new Instances(localInstances[0], 0);
-	            for (int i = 1; i < localInstances.length; i++) {
-	                data.addAll(localInstances[i]);
+	        m_test = null;
+	        m_isLeaf = false;
+	        m_isEmpty = false;
+	        m_sons = null;
+	        m_localModel = m_toSelectModel.selectModel(currentData);
+	        if (m_localModel.numSubsets() > 1) {
+	            localInstances = m_localModel.split(currentData);
+	            m_sons = new ClassifierTree[m_localModel.numSubsets()];
+	            for (int i = 0; i < m_sons.length; i++) {
+	                m_sons[i] = getNewTree(localInstances[i]);
+	                stack.push(localInstances[i]);
 	            }
 	        } else {
-	            // leaf node
-	            current.m_isLeaf = true;
-	            if (Utils.eq(data.sumOfWeights(), 0)) {
-	                current.m_isEmpty = true;
+	            m_isLeaf = true;
+	            if (Utils.eq(currentData.sumOfWeights(), 0)) {
+	                m_isEmpty = true;
 	            }
-	            //data = null; // comment out this line
 	        }
-
 	    }
 	}
 
 
-  */
+
+
+  /*
+   * 
+   *   public void buildTree(Instances data, boolean keepData) throws Exception {
+	    Stack<Object[]> stack = new Stack<>();
+	    stack.push(new Object[] {data, new ClassifierTree(m_toSelectModel)});
+
+	    while (!stack.isEmpty()) {
+	        Object[] current = stack.pop();
+	        Instances currentData = (Instances) current[0];
+	        ClassifierTree currentTree = (ClassifierTree) current[1];
+
+	        Instances[] localInstances;
+	        if (keepData) {
+	            currentTree.m_train = currentData;
+	        }
+	        currentTree.m_test = null;
+	        currentTree.m_isLeaf = false;
+	        currentTree.m_isEmpty = false;
+	        currentTree.m_sons = null;
+	        currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
+	        if (currentTree.m_localModel.numSubsets() > 1) {
+	            localInstances = currentTree.m_localModel.split(currentData);
+	            currentData = null;
+	            currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
+	            for (int i = 0; i < currentTree.m_sons.length; i++) {
+	                ClassifierTree newTree = new ClassifierTree(currentTree.m_toSelectModel);
+	                stack.push(new Object[] {localInstances[i], newTree});
+	                currentTree.m_sons[i] = newTree;
+	            }
+	        } else {
+	            currentTree.m_isLeaf = true;
+	            if (Utils.eq(currentData.sumOfWeights(), 0)) {
+	                currentTree.m_isEmpty = true;
+	            }
+	            currentData = null;
+	        }
+	    }
+	}
+	
   public void buildTree(Instances data, boolean keepData) throws Exception {
 
 	    Instances[] localInstances;
@@ -238,6 +273,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 	    }
 	  }
 
+*/
   /**
    * Builds the tree structure with hold out set
    * 
@@ -569,7 +605,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
   protected ClassifierTree getNewTree(Instances data) throws Exception {
 
     ClassifierTree newTree = new ClassifierTree(m_toSelectModel);
-    newTree.buildTree(data, false);
+    //newTree.buildTree(data, false);
 
     return newTree;
   }
