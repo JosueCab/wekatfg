@@ -170,7 +170,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
    * @throws Exception if something goes wrong
    */
   // ITERATIVE
-
+/*
   public void buildTree(Instances data, boolean keepData) throws Exception {
 	    Stack<Instances> stack = new Stack<>();
 	    stack.push(data);
@@ -191,7 +191,8 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 	            localInstances = m_localModel.split(currentData);
 	            m_sons = new ClassifierTree[m_localModel.numSubsets()];
 	            for (int i = 0; i < m_sons.length; i++) {
-	                m_sons[i] = getNewTree(localInstances[i]);
+	                //m_sons[i] = getNewTree(localInstances[i]);
+	            	m_sons[i] = new ClassifierTree(m_toSelectModel);
 	                stack.push(localInstances[i]);
 	            }
 	        } else {
@@ -206,11 +207,9 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 
 
 
-  /*
-   * 
-   *   public void buildTree(Instances data, boolean keepData) throws Exception {
+ public void buildTree(Instances data, boolean keepData) throws Exception {
 	    Stack<Object[]> stack = new Stack<>();
-	    stack.push(new Object[] {data, new ClassifierTree(m_toSelectModel)});
+	    stack.push(new Object[] {data, this});
 
 	    while (!stack.isEmpty()) {
 	        Object[] current = stack.pop();
@@ -244,7 +243,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 	        }
 	    }
 	}
-	
+	*/
   public void buildTree(Instances data, boolean keepData) throws Exception {
 
 	    Instances[] localInstances;
@@ -273,7 +272,6 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 	    }
 	  }
 
-*/
   /**
    * Builds the tree structure with hold out set
    * 
