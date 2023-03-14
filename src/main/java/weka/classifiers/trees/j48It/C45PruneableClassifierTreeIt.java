@@ -51,42 +51,46 @@ public class C45PruneableClassifierTreeIt extends
 	 * @param keepData is training data to be kept?
 	 * @throws Exception if something goes wrong
 	 */
-	 public void buildTree(Instances data, boolean keepData) throws Exception {
-	 	    Stack<Object[]> stack = new Stack<>();
-	 	    stack.push(new Object[] {data, this});
+	public void buildTree(Instances data, boolean keepData) throws Exception {
+	    ArrayList<Object[]> list = new ArrayList<>();
+	    list.add(new Object[] {data, this});
 
-	 	    while (!stack.isEmpty()) {
-	 	        Object[] current = stack.pop();
-	 	        Instances currentData = (Instances) current[0];
-	 	        C45PruneableClassifierTreeIt currentTree = (C45PruneableClassifierTreeIt) current[1];
+	    int index = 0;
+	    while (index < list.size()) {
+	        Object[] current = list.get(index);
+	        Instances currentData = (Instances) current[0];
+	        C45PruneableClassifierTreeIt currentTree = (C45PruneableClassifierTreeIt) current[1];
 
-	 	        Instances[] localInstances;
-	 	        if (keepData) {
-	 	            currentTree.m_train = currentData;
-	 	        }
-	 	        currentTree.m_test = null;
-	 	        currentTree.m_isLeaf = false;
-	 	        currentTree.m_isEmpty = false;
-	 	        currentTree.m_sons = null;
-	 	        currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
-	 	        if (currentTree.m_localModel.numSubsets() > 1) {
-	 	            localInstances = currentTree.m_localModel.split(currentData);
-	 	            currentData = null;
-	 	            currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
-	 	            for (int i = 0; i < currentTree.m_sons.length; i++) {
-	 	                ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel, m_pruneTheTree, m_CF,
-	 	  				     m_subtreeRaising, m_cleanup, m_collapseTheTree);
-	 	                stack.push(new Object[] {localInstances[i], newTree});
-	 	                currentTree.m_sons[i] = newTree;
-	 	            }
-	 	        } else {
-	 	            currentTree.m_isLeaf = true;
-	 	            if (Utils.eq(currentData.sumOfWeights(), 0)) {
-	 	                currentTree.m_isEmpty = true;
-	 	            }
-	 	            currentData = null;
-	 	        }
-	 	    }
-	 	}
+	        Instances[] localInstances;
+	        if (keepData) {
+	            currentTree.m_train = currentData;
+	        }
+	        currentTree.m_test = null;
+	        currentTree.m_isLeaf = false;
+	        currentTree.m_isEmpty = false;
+	        currentTree.m_sons = null;
+	        currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
+	        if (currentTree.m_localModel.numSubsets() > 1) {
+	            localInstances = currentTree.m_localModel.split(currentData);
+	            currentData = null;
+	            currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
+	            for (int i = 0; i < currentTree.m_sons.length; i++) {
+	                ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel, m_pruneTheTree, m_CF,
+	                            m_subtreeRaising, m_cleanup, m_collapseTheTree);
+	                list.add(new Object[] {localInstances[i], newTree});
+	                currentTree.m_sons[i] = newTree;
+	            }
+	        } else {
+	            currentTree.m_isLeaf = true;
+	            if (Utils.eq(currentData.sumOfWeights(), 0)) {
+	                currentTree.m_isEmpty = true;
+	            }
+	            currentData = null;
+	        }
 
+	        index++; // Indizea inkrementatzen da
+	        list.set(index - 1, null); // Null egiten da memoria liberatzeko
+	    }
+	}
 }
+
