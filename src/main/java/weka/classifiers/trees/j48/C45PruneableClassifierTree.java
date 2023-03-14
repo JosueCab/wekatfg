@@ -85,7 +85,8 @@ public class C45PruneableClassifierTree
     m_collapseTheTree = collapseTree;
   }
 
-  /**
+
+/**
    * Method for building a pruneable classifier tree.
    *
    * @param data the data for building the tree
@@ -209,50 +210,10 @@ public class C45PruneableClassifierTree
     C45PruneableClassifierTree newTree = 
       new C45PruneableClassifierTree(m_toSelectModel, m_pruneTheTree, m_CF,
 				     m_subtreeRaising, m_cleanup, m_collapseTheTree);
-  // newTree.buildTree((Instances)data, m_subtreeRaising || !m_cleanup);
+  newTree.buildTree((Instances)data, m_subtreeRaising || !m_cleanup);
 
     return newTree;
   }
-  
-
-  public void buildTree(Instances data, boolean keepData) throws Exception {
- 	    Stack<Object[]> stack = new Stack<>();
- 	    stack.push(new Object[] {data, this});
-
- 	    while (!stack.isEmpty()) {
- 	        Object[] current = stack.pop();
- 	        Instances currentData = (Instances) current[0];
- 	        C45PruneableClassifierTree currentTree = (C45PruneableClassifierTree) current[1];
-
- 	        Instances[] localInstances;
- 	        if (keepData) {
- 	            currentTree.m_train = currentData;
- 	        }
- 	        currentTree.m_test = null;
- 	        currentTree.m_isLeaf = false;
- 	        currentTree.m_isEmpty = false;
- 	        currentTree.m_sons = null;
- 	        currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
- 	        if (currentTree.m_localModel.numSubsets() > 1) {
- 	            localInstances = currentTree.m_localModel.split(currentData);
- 	            currentData = null;
- 	            currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
- 	            for (int i = 0; i < currentTree.m_sons.length; i++) {
- 	                ClassifierTree newTree = new C45PruneableClassifierTree(currentTree.m_toSelectModel, m_pruneTheTree, m_CF,
- 	  				     m_subtreeRaising, m_cleanup, m_collapseTheTree);
- 	                stack.push(new Object[] {localInstances[i], newTree});
- 	                currentTree.m_sons[i] = newTree;
- 	            }
- 	        } else {
- 	            currentTree.m_isLeaf = true;
- 	            if (Utils.eq(currentData.sumOfWeights(), 0)) {
- 	                currentTree.m_isEmpty = true;
- 	            }
- 	            currentData = null;
- 	        }
- 	    }
- 	}
-
 
   /**
    * Computes estimated errors for tree.
