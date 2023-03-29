@@ -558,7 +558,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
    * @param text for outputting the structure
    * @throws Exception if something goes wrong
    */
-  public void dumpTree(int depth, StringBuffer text) throws Exception {
+  private void dumpTree(int depth, StringBuffer text) throws Exception {
 
     int i, j;
 
