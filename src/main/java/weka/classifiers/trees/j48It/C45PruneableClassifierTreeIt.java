@@ -25,11 +25,16 @@ public class C45PruneableClassifierTreeIt extends
 	/** Indicates the order in which the node was treated */
 	private int m_order;
 	
-	/** Build the tree level by level, rather than in pre-order */
+	/** Build the tree level by level up to a maximum of depth levels. 
+	 * Set m_levelByLevel_growth to 0 to use the optimal number of levels.
+	 */
 	private int m_levelByLevel_growth = 0;
 	
+	/** All possible priorities */
+	enum priorities {MAILAZMAILA,PREORDER,SIZE}
+	
 	/** Indicates the criteria that should be used to build the tree */
-	private int priority_criteria = 1;
+	private priorities priority_criteria = priorities.SIZE;
 		
 
 	/**
@@ -101,13 +106,18 @@ public class C45PruneableClassifierTreeIt extends
 	                localInstances[i] = null;
 	            }
 
-	            if (m_levelByLevel_growth == 0) { // mailaz maila normala
+	            if (priority_criteria == priorities.MAILAZMAILA) { // mailaz maila normala
 	            	list.addAll(listSons);
 	            }
+
 	         
-	            else { //preorder
+	            else if (priority_criteria == priorities.PREORDER){ //preorder
 	            	listSons.addAll(list);
 		            list = listSons;
+	            }
+	            else if(priority_criteria == priorities.SIZE) // Lehentasuna tamaina
+	            {
+	            	addOrderedBySize(list, listSons);
 	            }
 	            
 	            listSons = null;
@@ -156,50 +166,29 @@ public class C45PruneableClassifierTreeIt extends
 	  
 
 	  
-	  public void addToListWithPriority(ArrayList<Object[]> list, ArrayList<Object[]> listSons) {
-		    if (list.size() == 0) {
+	  public void addOrderedBySize(ArrayList<Object[]> list, ArrayList<Object[]> listSons) {
+		    if (list.size() == 0) 
+		    {
 		        list.add(0, listSons.get(0));
 		    }
 		    
 		    double sonInfo = 0;
 		    double parentInfo = 0;
 		    
-	        for (int i = 0; i < listSons.size(); i++) {
+	        for (int i = 0; i < listSons.size(); i++) 
+	        {
 	            Instances sonData = (Instances) listSons.get(i)[0];
-	            
-	            if (priority_criteria == 1) { // SIZE
-	            	sonInfo = sonData.numInstances();
-				    
-			    } else if (priority_criteria == 2) { // GAINRATIO
-	            	sonInfo = sonData.gain
-
-			    	
-			    } else if (priority_criteria == 3) { // GAINRATIO_NORMALIZED
-			        //
-			    } else { // PREORDER
-			        // 
-			    }
-	          
-	            for (int j = 0; j < list.size(); j++) {
+	            sonInfo = sonData.numInstances();
+	            	          
+	            for (int j = 0; j < list.size(); j++) 
+	            {
 	                Instances data = (Instances) list.get(j)[0];
-		            
-		            if (priority_criteria == 1) { // SIZE
-		            	
-		            	parentInfo = data.numInstances();
-					    
-				    } else if (priority_criteria == 2) { // GAINRATIO
-				        //
-				    } else if (priority_criteria == 3) { // GAINRATIO_NORMALIZED
-				        //
-				    } else { // PREORDER
-				        // 
-				    }
-		            
-		            
-	                if (parentInfo > sonInfo) {
+		            		            	
+		            parentInfo = data.numInstances();
+		            		            
+	                if (parentInfo < sonInfo) {
 	                    list.add(j, listSons.get(i));
 	                    break;
-
 	                }
 	                
 	                if (j == list.size() - 1) {
@@ -208,24 +197,6 @@ public class C45PruneableClassifierTreeIt extends
 	                }
 	            }
 	        }
-		    
-		
-
-		    
-		  /*  
-
-		  if (priority_criteria == 1) { // SIZE
-			  
-			    
-		       
-		    } else if (priority_criteria == 2) { // GAINRATIO
-		        //
-		    } else if (priority_criteria == 3) { // GAINRATIO_NORMALIZED
-		        //
-		    } else { // PREORDER
-		        // 
-		    }*/
+		   
 	  }
-
-
 }
