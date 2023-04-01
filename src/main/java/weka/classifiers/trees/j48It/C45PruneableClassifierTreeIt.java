@@ -28,10 +28,10 @@ public class C45PruneableClassifierTreeIt extends
 	/** Build the tree level by level up to a maximum of depth levels. 
 	 * Set m_levelByLevel_growth to 0 to use the optimal number of levels.
 	 */
-	private int m_levelByLevel_growth = 0;
+	private int m_levelByLevel_growth = 3;
 	
 	/** All possible priorities */
-	enum priorities {MAILAZMAILA,PREORDER,SIZE}
+	enum priorities {LEVELBYLEVEL,PREORDER,SIZE}
 	
 	/** Indicates the criteria that should be used to build the tree */
 	private priorities priority_criteria = priorities.SIZE;
@@ -75,7 +75,7 @@ public class C45PruneableClassifierTreeIt extends
 	    int index = 0;
 	    while (list.size() > 0) {
 	        Object[] current = list.get(0);
-	        list.set(0, null); // Null egiten da memoria liberatzeko
+	        list.set(0, null); // Null to free up memory
 	        list.remove(0);
 
 	        Instances currentData = (Instances) current[0];
@@ -91,7 +91,7 @@ public class C45PruneableClassifierTreeIt extends
 	        currentTree.m_sons = null;
 	        currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
 	        
-	        if (currentTree.m_localModel.numSubsets() > 1 && (m_levelByLevel_growth == 0 || index < m_levelByLevel_growth - 1)) {
+	        if (currentTree.m_localModel.numSubsets() > 1 && (m_levelByLevel_growth == 0 || currentTree.m_order < m_levelByLevel_growth - 1)) {
 	    	    ArrayList<Object[]> listSons = new ArrayList<>();
 	    	    localInstances = currentTree.m_localModel.split(currentData);
 	            currentData = null;
@@ -101,12 +101,11 @@ public class C45PruneableClassifierTreeIt extends
 	                            m_subtreeRaising, m_cleanup, m_collapseTheTree);
 	                listSons.add(new Object[] {localInstances[i], newTree});
 	                currentTree.m_sons[i] = newTree;
-	                //currentTree.m_sons[i].m_toSelectModel.selectModel(currentData).
 	            
 	                localInstances[i] = null;
 	            }
 
-	            if (priority_criteria == priorities.MAILAZMAILA) { // mailaz maila normala
+	            if (priority_criteria == priorities.LEVELBYLEVEL) { // level by level
 	            	list.addAll(listSons);
 	            }
 
@@ -115,7 +114,7 @@ public class C45PruneableClassifierTreeIt extends
 	            	listSons.addAll(list);
 		            list = listSons;
 	            }
-	            else if(priority_criteria == priorities.SIZE) // Lehentasuna tamaina
+	            else if(priority_criteria == priorities.SIZE) // Added by size, largest to smallest
 	            {
 	            	addOrderedBySize(list, listSons);
 	            }
@@ -171,22 +170,25 @@ public class C45PruneableClassifierTreeIt extends
 		    {
 		        list.add(0, listSons.get(0));
 		    }
+		    if (list.size() > 0 && list.get(0)[0].equals(listSons.get(0)[0])) {
+		        listSons.remove(0); // Remove the first element from the list listSons
+		    }
 		    
-		    double sonInfo = 0;
-		    double parentInfo = 0;
+		    int sonInstances = 0;
+		    int parentInstances = 0;
 		    
 	        for (int i = 0; i < listSons.size(); i++) 
 	        {
 	            Instances sonData = (Instances) listSons.get(i)[0];
-	            sonInfo = sonData.numInstances();
+	            sonInstances = sonData.numInstances();
 	            	          
 	            for (int j = 0; j < list.size(); j++) 
 	            {
 	                Instances data = (Instances) list.get(j)[0];
 		            		            	
-		            parentInfo = data.numInstances();
+		            parentInstances = data.numInstances();
 		            		            
-	                if (parentInfo < sonInfo) {
+	                if (parentInstances < sonInstances) {
 	                    list.add(j, listSons.get(i));
 	                    break;
 	                }
