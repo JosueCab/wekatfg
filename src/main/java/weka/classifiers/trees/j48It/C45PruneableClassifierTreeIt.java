@@ -105,12 +105,12 @@ public class C45PruneableClassifierTreeIt extends
 	                localInstances[i] = null;
 	            }
 
-	            if (priority_criteria == priorities.LEVELBYLEVEL) { // level by level
+	            if (priority_criteria == priorities.LEVELBYLEVEL) { // Level by level
 	            	list.addAll(listSons);
 	            }
 
 	         
-	            else if (priority_criteria == priorities.PREORDER){ //preorder
+	            else if (priority_criteria == priorities.PREORDER){ // Preorder
 	            	listSons.addAll(list);
 		            list = listSons;
 	            }
@@ -128,7 +128,7 @@ public class C45PruneableClassifierTreeIt extends
 	            currentData = null;
 	        }
 
-	        index++; // Indizea inkrementatzen da
+	        index++; 
 	    }
 	}
 	
