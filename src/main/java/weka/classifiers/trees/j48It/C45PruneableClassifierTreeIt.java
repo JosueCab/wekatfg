@@ -3,6 +3,8 @@ package weka.classifiers.trees.j48It;
 import java.util.ArrayList;
 
 import weka.classifiers.trees.j48.C45PruneableClassifierTree;
+import weka.classifiers.trees.j48.C45Split;
+import weka.classifiers.trees.j48.ClassifierSplitModel;
 import weka.classifiers.trees.j48.ClassifierTree;
 import weka.classifiers.trees.j48.ModelSelection;
 import weka.core.Instances;
@@ -28,13 +30,13 @@ public class C45PruneableClassifierTreeIt extends
 	/** Build the tree level by level up to a maximum of depth levels. 
 	 * Set m_levelByLevel_growth to 0 to use the optimal number of levels.
 	 */
-	private int m_levelByLevel_growth = 3;
+	private int m_levelByLevel_growth = 0;
 	
 	/** All possible priorities */
-	enum priorities {LEVELBYLEVEL,PREORDER,SIZE}
+	enum priorities {LEVELBYLEVEL,PREORDER,SIZE, GAINRATIO, GAINRATIO_NORMALIZED}
 	
 	/** Indicates the criteria that should be used to build the tree */
-	private priorities priority_criteria = priorities.SIZE;
+	private priorities priority_criteria = priorities.GAINRATIO_NORMALIZED;
 		
 
 	/**
@@ -67,12 +69,13 @@ public class C45PruneableClassifierTreeIt extends
 	 */
 	public void buildTree(Instances data, boolean keepData) throws Exception {
 		
-        int currentLevel = 0;
 	    ArrayList<Object[]> list = new ArrayList<>();
 	    list.add(new Object[] {data, this});
         Instances[] localInstances;
 
 	    int index = 0;
+	    double orderValue;
+	    
 	    while (list.size() > 0) {
 	        Object[] current = list.get(0);
 	        list.set(0, null); // Null to free up memory
@@ -99,7 +102,53 @@ public class C45PruneableClassifierTreeIt extends
 	            for (int i = 0; i < currentTree.m_sons.length; i++) {
 	                ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel, m_pruneTheTree, m_CF,
 	                            m_subtreeRaising, m_cleanup, m_collapseTheTree);
-	                listSons.add(new Object[] {localInstances[i], newTree});
+	                
+	              
+		            if(priority_criteria == priorities.SIZE) // Added by size, largest to smallest
+		            {
+		            	
+		            	orderValue = localInstances[i].numInstances();;
+		            	Object[] son = new Object[] {localInstances[i], newTree, orderValue};
+		            	addSonOrderedByValue(list, son);
+		            }
+		            else if(priority_criteria == priorities.GAINRATIO) // Added by gainratio, largest to smallest
+		            {
+		            	ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt)newTree).m_toSelectModel.selectModel(localInstances[i]);
+		            	if (sonModel.numSubsets() > 1) {
+
+		            		orderValue = ((C45Split)sonModel).gainRatio(); 
+
+		            		} else {
+
+		            		orderValue = (double)Double.MIN_VALUE;
+		            	}
+		            	Object[] son = new Object[] {localInstances[i], newTree, orderValue};
+		            	addSonOrderedByValue(list, son);
+		            }
+		            else if(priority_criteria == priorities.GAINRATIO_NORMALIZED) // Added by gainratio normalized, largest to smallest
+		            {
+		            	
+		            	int numInstances = localInstances[i].numInstances();
+		            	double gainRatio;
+		            	ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt)newTree).m_toSelectModel.selectModel(localInstances[i]);
+		            	if (sonModel.numSubsets() > 1) {
+
+		            		gainRatio = ((C45Split)sonModel).gainRatio(); 
+
+		            		} else {
+
+		            		gainRatio = (double)Double.MIN_VALUE;
+		            	}
+		            	orderValue = numInstances * gainRatio;
+		            	Object[] son = new Object[] {localInstances[i], newTree, orderValue};
+		            	addSonOrderedByValue(list, son);
+		                    			            	
+		            }
+		            else
+		            {
+		                listSons.add(new Object[] {localInstances[i], newTree});           	
+		            }
+		            
 	                currentTree.m_sons[i] = newTree;
 	            
 	                localInstances[i] = null;
@@ -113,10 +162,6 @@ public class C45PruneableClassifierTreeIt extends
 	            else if (priority_criteria == priorities.PREORDER){ // Preorder
 	            	listSons.addAll(list);
 		            list = listSons;
-	            }
-	            else if(priority_criteria == priorities.SIZE) // Added by size, largest to smallest
-	            {
-	            	addOrderedBySize(list, listSons);
 	            }
 	            
 	            listSons = null;
@@ -162,43 +207,33 @@ public class C45PruneableClassifierTreeIt extends
 			  }
 		  }
 	  }
-	  
 
-	  
-	  public void addOrderedBySize(ArrayList<Object[]> list, ArrayList<Object[]> listSons) {
-		    if (list.size() == 0) 
+	  public void addSonOrderedByValue(ArrayList<Object[]> list, Object[] son) {
+	    if (list.size() == 0) 
+	    {
+	        list.add(0, son);
+	    }
+	    else
+	    {
+		    
+	    	double sonValue = (double) son[2];
+		    for (int i = 0; i < list.size(); i++)
 		    {
-		        list.add(0, listSons.get(0));
-		    }
-		    if (list.size() > 0 && list.get(0)[0].equals(listSons.get(0)[0])) {
-		        listSons.remove(0); // Remove the first element from the list listSons
-		    }
-		    
-		    int sonInstances = 0;
-		    int parentInstances = 0;
-		    
-	        for (int i = 0; i < listSons.size(); i++) 
-	        {
-	            Instances sonData = (Instances) listSons.get(i)[0];
-	            sonInstances = sonData.numInstances();
-	            	          
-	            for (int j = 0; j < list.size(); j++) 
-	            {
-	                Instances data = (Instances) list.get(j)[0];
-		            		            	
-		            parentInstances = data.numInstances();
-		            		            
-	                if (parentInstances < sonInstances) {
-	                    list.add(j, listSons.get(i));
-	                    break;
-	                }
-	                
-	                if (j == list.size() - 1) {
-	                    list.add(listSons.get(i));
-	                    break;
-	                }
+		    	
+	            double parentValue = (double) list.get(i)[2];
+	            if (parentValue < sonValue) {
+	                list.add(i, son);
+	                break;
 	            }
-	        }
-		   
+	            
+	            if (i == list.size() - 1) {
+	                list.add(son);
+	                break;
+	            }
+		    			  
+		    }
+	    }
+	  
 	  }
+	  
 }
