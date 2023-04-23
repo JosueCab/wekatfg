@@ -11,229 +11,227 @@ import weka.core.Instances;
 import weka.core.Utils;
 
 /**
- * Class for handling a consolidated tree structure that can
- * be pruned using C4.5 procedures.
+ * Class for handling a consolidated tree structure that can be pruned using
+ * C4.5 procedures.
  * *************************************************************************************
  * 
- * @author Jes&uacute;s M. P&eacute;rez (txus.perez@ehu.eus) 
+ * @author Jes&uacute;s M. P&eacute;rez (txus.perez@ehu.eus)
  * @version $Revision: 1.2 $
  */
-public class C45PruneableClassifierTreeIt extends
-		C45PruneableClassifierTree {
+public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 
 	/** for serialization */
 	private static final long serialVersionUID = 2660972525647728377L;
-	
+
 	/** Indicates the order in which the node was treated */
 	private int m_order;
 	
-	/** Build the tree level by level up to a maximum of depth levels. 
-	 * Set m_levelByLevel_growth to 0 to use the optimal number of levels.
-	 */
-	private int m_levelByLevel_growth = 0;
-	
-	/** All possible priorities */
-	enum priorities {LEVELBYLEVEL,PREORDER,SIZE, GAINRATIO, GAINRATIO_NORMALIZED}
-	
-	/** Indicates the criteria that should be used to build the tree */
-	private priorities priority_criteria = priorities.GAINRATIO_NORMALIZED;
-		
 
 	/**
-	 * Constructor for pruneable consolidated tree structure. Calls
-	 * the superclass constructor.
+	 * Build the tree level by level up to a maximum of depth levels. Set
+	 * m_maximumLevel to 0 for default.
+	 */
+	private int m_maximumLevel = 3;
+
+	/** All possible priorities */
+	enum priorities {
+		LEVELBYLEVEL, PREORDER, SIZE, GAINRATIO, GAINRATIO_NORMALIZED
+	}
+
+	/** Indicates the criteria that should be used to build the tree */
+	private priorities priority_criteria = priorities.LEVELBYLEVEL;
+
+	/**
+	 * Constructor for pruneable consolidated tree structure. Calls the superclass
+	 * constructor.
 	 *
 	 * @param toSelectLocModel selection method for local splitting model
-	 * @param pruneTree true if the tree is to be pruned
-	 * @param cf the confidence factor for pruning
-	 * @param raiseTree true if subtree raising has to be performed
-	 * @param cleanup true if cleanup has to be done
-	 * @param collapseTree true if collapse has to be done
+	 * @param pruneTree        true if the tree is to be pruned
+	 * @param cf               the confidence factor for pruning
+	 * @param raiseTree        true if subtree raising has to be performed
+	 * @param cleanup          true if cleanup has to be done
+	 * @param collapseTree     true if collapse has to be done
 	 * @throws Exception if something goes wrong
 	 */
-	public C45PruneableClassifierTreeIt(
-			ModelSelection toSelectLocModel, boolean pruneTree, float cf,
-			boolean raiseTree, boolean cleanup, boolean collapseTree) throws Exception {
+	public C45PruneableClassifierTreeIt(ModelSelection toSelectLocModel, boolean pruneTree, float cf, boolean raiseTree,
+			boolean cleanup, boolean collapseTree) throws Exception {
 		super(toSelectLocModel, pruneTree, cf, raiseTree, cleanup, collapseTree);
 	}
 
-
 	/**
-	 * Builds the consolidated tree structure.
-	 * (based on the method buildTree() of the class 'ClassifierTree')
+	 * Builds the consolidated tree structure. (based on the method buildTree() of
+	 * the class 'ClassifierTree')
 	 *
-	 * @param data the data for pruning the consolidated tree
+	 * @param data          the data for pruning the consolidated tree
 	 * @param samplesVector the vector of samples used for consolidation
-	 * @param keepData is training data to be kept?
+	 * @param keepData      is training data to be kept?
 	 * @throws Exception if something goes wrong
 	 */
 	public void buildTree(Instances data, boolean keepData) throws Exception {
+
+		ArrayList<Object[]> list = new ArrayList<>();
 		
-	    ArrayList<Object[]> list = new ArrayList<>();
-	    list.add(new Object[] {data, this});
-        Instances[] localInstances;
+		// add(Data, tree, orderValue, currentLevel)
+		list.add(new Object[] { data, this, null, 0 }); // The parent node is considered level 0
+		
+		Instances[] localInstances;
 
-	    int index = 0;
-	    double orderValue;
-	    
-	    while (list.size() > 0) {
-	        Object[] current = list.get(0);
-	        list.set(0, null); // Null to free up memory
-	        list.remove(0);
+		int index = 0;
+		double orderValue;
 
-	        Instances currentData = (Instances) current[0];
-	        C45PruneableClassifierTreeIt currentTree = (C45PruneableClassifierTreeIt) current[1];
-	        currentTree.m_order = index;
+		while (list.size() > 0) {
+			Object[] current = list.get(0);
+			int currentLevel = (int) current[3];
+			list.set(0, null); // Null to free up memory
+			list.remove(0);
 
-	        if (keepData) {
-	            currentTree.m_train = currentData;
-	        }
-	        currentTree.m_test = null;
-	        currentTree.m_isLeaf = false;
-	        currentTree.m_isEmpty = false;
-	        currentTree.m_sons = null;
-	        currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
-	        
-	        if (currentTree.m_localModel.numSubsets() > 1 && (m_levelByLevel_growth == 0 || currentTree.m_order < m_levelByLevel_growth - 1)) {
-	    	    ArrayList<Object[]> listSons = new ArrayList<>();
-	    	    localInstances = currentTree.m_localModel.split(currentData);
-	            currentData = null;
-	            currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
-	            for (int i = 0; i < currentTree.m_sons.length; i++) {
-	                ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel, m_pruneTheTree, m_CF,
-	                            m_subtreeRaising, m_cleanup, m_collapseTheTree);
-	                
-	              
-		            if(priority_criteria == priorities.SIZE) // Added by size, largest to smallest
-		            {
-		            	
-		            	orderValue = localInstances[i].numInstances();;
-		            	Object[] son = new Object[] {localInstances[i], newTree, orderValue};
-		            	addSonOrderedByValue(list, son);
-		            }
-		            else if(priority_criteria == priorities.GAINRATIO) // Added by gainratio, largest to smallest
-		            {
-		            	ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt)newTree).m_toSelectModel.selectModel(localInstances[i]);
-		            	if (sonModel.numSubsets() > 1) {
+			Instances currentData = (Instances) current[0];
+			C45PruneableClassifierTreeIt currentTree = (C45PruneableClassifierTreeIt) current[1];
+			currentTree.m_order = index;
 
-		            		orderValue = ((C45Split)sonModel).gainRatio(); 
+			if (keepData) {
+				currentTree.m_train = currentData;
+			}
+			currentTree.m_test = null;
+			currentTree.m_isLeaf = false;
+			currentTree.m_isEmpty = false;
+			currentTree.m_sons = null;
+			currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
 
-		            		} else {
+			if (currentTree.m_localModel.numSubsets() > 1 && (m_maximumLevel == 0 || currentLevel < m_maximumLevel)) {
+				ArrayList<Object[]> listSons = new ArrayList<>();
+				localInstances = currentTree.m_localModel.split(currentData);
+				currentData = null;
+				currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
+				for (int i = 0; i < currentTree.m_sons.length; i++) {
+					ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel,
+							m_pruneTheTree, m_CF, m_subtreeRaising, m_cleanup, m_collapseTheTree);
 
-		            		orderValue = (double)Double.MIN_VALUE;
-		            	}
-		            	Object[] son = new Object[] {localInstances[i], newTree, orderValue};
-		            	addSonOrderedByValue(list, son);
-		            }
-		            else if(priority_criteria == priorities.GAINRATIO_NORMALIZED) // Added by gainratio normalized, largest to smallest
-		            {
-		            	
-		            	int numInstances = localInstances[i].numInstances();
-		            	double gainRatio;
-		            	ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt)newTree).m_toSelectModel.selectModel(localInstances[i]);
-		            	if (sonModel.numSubsets() > 1) {
+					if (priority_criteria == priorities.SIZE) // Added by size, largest to smallest
+					{
 
-		            		gainRatio = ((C45Split)sonModel).gainRatio(); 
+						orderValue = localInstances[i].numInstances();
+						
+						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1};
+						addSonOrderedByValue(list, son);
+					} else if (priority_criteria == priorities.GAINRATIO) // Added by gainratio, largest to smallest
+					{
+						ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt) newTree).m_toSelectModel
+								.selectModel(localInstances[i]);
+						if (sonModel.numSubsets() > 1) {
 
-		            		} else {
+							orderValue = ((C45Split) sonModel).gainRatio();
 
-		            		gainRatio = (double)Double.MIN_VALUE;
-		            	}
-		            	orderValue = numInstances * gainRatio;
-		            	Object[] son = new Object[] {localInstances[i], newTree, orderValue};
-		            	addSonOrderedByValue(list, son);
-		                    			            	
-		            }
-		            else
-		            {
-		                listSons.add(new Object[] {localInstances[i], newTree});           	
-		            }
-		            
-	                currentTree.m_sons[i] = newTree;
-	            
-	                localInstances[i] = null;
-	            }
+						} else {
 
-	            if (priority_criteria == priorities.LEVELBYLEVEL) { // Level by level
-	            	list.addAll(listSons);
-	            }
+							orderValue = (double) Double.MIN_VALUE;
+						}
+						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1};
+						addSonOrderedByValue(list, son);
+					} else if (priority_criteria == priorities.GAINRATIO_NORMALIZED) // Added by gainratio normalized,
+																						// largest to smallest
+					{
 
-	         
-	            else if (priority_criteria == priorities.PREORDER){ // Preorder
-	            	listSons.addAll(list);
-		            list = listSons;
-	            }
-	            
-	            listSons = null;
-	        } else {
-	            currentTree.m_isLeaf = true;
-	            if (Utils.eq(currentData.sumOfWeights(), 0)) {
-	                currentTree.m_isEmpty = true;
-	            }
-	            currentData = null;
-	        }
+						int numInstances = localInstances[i].numInstances();
+						double gainRatio;
+						ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt) newTree).m_toSelectModel
+								.selectModel(localInstances[i]);
+						if (sonModel.numSubsets() > 1) {
 
-	        index++; 
-	    }
+							gainRatio = ((C45Split) sonModel).gainRatio();
+
+						} else {
+
+							gainRatio = (double) Double.MIN_VALUE;
+						}
+						orderValue = numInstances * gainRatio;
+						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1};
+						addSonOrderedByValue(list, son);
+
+					} else {
+						listSons.add(new Object[] { localInstances[i], newTree, 0, currentLevel + 1});
+					}
+
+					currentTree.m_sons[i] = newTree;
+
+					localInstances[i] = null;
+				}
+
+				if (priority_criteria == priorities.LEVELBYLEVEL) { // Level by level
+					list.addAll(listSons);
+				}
+
+				else if (priority_criteria == priorities.PREORDER) { // Preorder
+					listSons.addAll(list);
+					list = listSons;
+				}
+
+				listSons = null;
+			} else {
+				currentTree.m_isLeaf = true;
+				if (Utils.eq(currentData.sumOfWeights(), 0)) {
+					currentTree.m_isEmpty = true;
+				}
+				currentData = null;
+			}
+
+			index++;
+		}
 	}
-	
-	  /**
-	   * Help method for printing tree structure.
-	   * 
-	   * @param depth the current depth
-	   * @param text for outputting the structure
-	   * @throws Exception if something goes wrong
-	   */
-	  public void dumpTree(int depth, StringBuffer text) throws Exception {
 
-		  int i, j;
+	/**
+	 * Help method for printing tree structure.
+	 * 
+	 * @param depth the current depth
+	 * @param text  for outputting the structure
+	 * @throws Exception if something goes wrong
+	 */
+	public void dumpTree(int depth, StringBuffer text) throws Exception {
 
-		  for (i = 0; i < m_sons.length; i++) {
-			  text.append("\n");
-			  ;
-			  for (j = 0; j < depth; j++) {
-				  text.append("|   ");
-			  }
-			  text.append("[" + m_order + "] ");
-			  text.append(m_isEmpty);
-			  text.append(m_localModel.leftSide(m_train));
-			  text.append(m_localModel.rightSide(i, m_train));
-			  if (m_sons[i].isLeaf()) {
-				  text.append(": ");
-				  text.append("[" + ((C45PruneableClassifierTreeIt)m_sons[i]).m_order + "] ");
-				  text.append(m_localModel.dumpLabel(i, m_train));
-			  } else {
-				  m_sons[i].dumpTree(depth + 1, text);
-			  }
-		  }
-	  }
+		int i, j;
 
-	  public void addSonOrderedByValue(ArrayList<Object[]> list, Object[] son) {
-	    if (list.size() == 0) 
-	    {
-	        list.add(0, son);
-	    }
-	    else
-	    {
-		    
-	    	double sonValue = (double) son[2];
-		    for (int i = 0; i < list.size(); i++)
-		    {
-		    	
-	            double parentValue = (double) list.get(i)[2];
-	            if (parentValue < sonValue) {
-	                list.add(i, son);
-	                break;
-	            }
-	            
-	            if (i == list.size() - 1) {
-	                list.add(son);
-	                break;
-	            }
-		    			  
-		    }
-	    }
-	  
-	  }
-	  
+		for (i = 0; i < m_sons.length; i++) {
+			text.append("\n");
+			;
+			for (j = 0; j < depth; j++) {
+				text.append("|   ");
+			}
+			text.append("[" + m_order + "] ");
+			text.append(m_isEmpty);
+			text.append(m_localModel.leftSide(m_train));
+			text.append(m_localModel.rightSide(i, m_train));
+			if (m_sons[i].isLeaf()) {
+				text.append(": ");
+				text.append("[" + ((C45PruneableClassifierTreeIt) m_sons[i]).m_order + "] ");
+				text.append(m_localModel.dumpLabel(i, m_train));
+			} else {
+				m_sons[i].dumpTree(depth + 1, text);
+			}
+		}
+	}
+
+	public void addSonOrderedByValue(ArrayList<Object[]> list, Object[] son) {
+		if (list.size() == 0) {
+			list.add(0, son);
+		} else {
+
+			double sonValue = (double) son[2];
+			for (int i = 0; i < list.size(); i++) {
+
+				double parentValue = (double) list.get(i)[2];
+				if (parentValue < sonValue) {
+					list.add(i, son);
+					break;
+				}
+
+				if (i == list.size() - 1) {
+					list.add(son);
+					break;
+				}
+
+			}
+		}
+
+	}
+
 }
