@@ -37,11 +37,6 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	 */
 	//private int m_maximumSize= 3;
 
-	/** All possible priorities */
-	enum priorities {
-		LEVELBYLEVEL, PREORDER, SIZE, GAINRATIO, GAINRATIO_NORMALIZED
-	}
-
 	/** Indicates the criteria that should be used to build the tree */
 	private int m_priorityCriteria = 1;
 
