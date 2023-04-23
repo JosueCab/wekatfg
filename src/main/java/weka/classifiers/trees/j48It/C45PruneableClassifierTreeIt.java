@@ -43,7 +43,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	}
 
 	/** Indicates the criteria that should be used to build the tree */
-	private priorities priority_criteria = priorities.SIZE;
+	private int m_priorityCriteria = 1;
 
 	/**
 	 * Constructor for pruneable consolidated tree structure. Calls the superclass
@@ -58,9 +58,10 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	 * @throws Exception if something goes wrong
 	 */
 	public C45PruneableClassifierTreeIt(ModelSelection toSelectLocModel, boolean pruneTree, float cf, boolean raiseTree,
-			boolean cleanup, boolean collapseTree, int ITmaximumLevel) throws Exception {
+			boolean cleanup, boolean collapseTree, int ITmaximumLevel, int ITPriorityCriteria) throws Exception {
 		super(toSelectLocModel, pruneTree, cf, raiseTree, cleanup, collapseTree);
 		m_maximumLevel = ITmaximumLevel;
+		m_priorityCriteria = ITPriorityCriteria;
 	}
 
 	/**
@@ -112,16 +113,16 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 				currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
 				for (int i = 0; i < currentTree.m_sons.length; i++) {
 					ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel,
-							m_pruneTheTree, m_CF, m_subtreeRaising, m_cleanup, m_collapseTheTree, m_maximumLevel);
+							m_pruneTheTree, m_CF, m_subtreeRaising, m_cleanup, m_collapseTheTree, m_maximumLevel, m_priorityCriteria);
 
-					if (priority_criteria == priorities.SIZE) // Added by size, largest to smallest
+					if (m_priorityCriteria == 3) // Added by size, largest to smallest
 					{
 
 						orderValue = localInstances[i].numInstances();
 
 						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1 };
 						addSonOrderedByValue(list, son);
-					} else if (priority_criteria == priorities.GAINRATIO) // Added by gainratio, largest to smallest
+					} else if (m_priorityCriteria == 4) // Added by gainratio, largest to smallest
 					{
 						ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt) newTree).m_toSelectModel
 								.selectModel(localInstances[i]);
@@ -135,7 +136,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 						}
 						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1 };
 						addSonOrderedByValue(list, son);
-					} else if (priority_criteria == priorities.GAINRATIO_NORMALIZED) // Added by gainratio normalized,
+					} else if (m_priorityCriteria == 5) // Added by gainratio normalized,
 																						// largest to smallest
 					{
 
@@ -164,11 +165,11 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 					localInstances[i] = null;
 				}
 
-				if (priority_criteria == priorities.LEVELBYLEVEL) { // Level by level
+				if (m_priorityCriteria == 1) { // Level by level
 					list.addAll(listSons);
 				}
 
-				else if (priority_criteria == priorities.PREORDER) { // Preorder
+				else if (m_priorityCriteria == 2) { // Preorder
 					listSons.addAll(list);
 					list = listSons;
 				}

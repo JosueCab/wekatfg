@@ -40,7 +40,9 @@ import weka.core.Instances;
 import weka.core.Matchable;
 import weka.core.Option;
 import weka.core.OptionHandler;
+import weka.core.SelectedTag;
 import weka.core.Summarizable;
+import weka.core.Tag;
 import weka.core.TechnicalInformationHandler;
 import weka.core.Utils;
 import weka.core.WeightedInstancesHandler;
@@ -52,6 +54,27 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 
 	/** Build the tree level by level, rather than in pre-order */
 	protected int m_ITmaximumLevel = 0;
+	
+	
+	/** Ways to set the priority criteria option */
+	public static final int Levelbylevel = 1;
+	public static final int Preorder = 2;
+	public static final int Size = 3;
+	public static final int Gainratio = 4;
+	public static final int Gainratio_normalized = 5;
+
+	
+	/** Strings related to the ways to set the priority criteria option */
+	public static final Tag[] TAGS_WAYS_TO_SET_PRIORITY_CRITERIA = {
+			new Tag(Levelbylevel, "Level by level"),
+			new Tag(Preorder, "Preoder"),
+			new Tag(Size, "Size"),
+			new Tag(Gainratio, "Gainratio"),
+			new Tag(Gainratio_normalized, "Normalized gainratio"),
+
+	};
+	
+	private int m_ITpriorityCriteria = Levelbylevel;
 
 	/**
 	 * Generates the classifier.
@@ -97,7 +120,7 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 		}
 		if (!m_reducedErrorPruning) {
 			m_root = new C45PruneableClassifierTreeIt(modSelection, !m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup,
-					m_collapseTree, m_ITmaximumLevel);
+					m_collapseTree, m_ITmaximumLevel, m_ITpriorityCriteria);
 		} else {
 			m_root = new PruneableClassifierTree(modSelection, !m_unpruned, m_numFolds, !m_noCleanup, m_Seed);
 		}
@@ -132,7 +155,8 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 		Vector<Option> newVector = new Vector<Option>(1);
 
 		newVector.addElement(new Option("\tBuild the tree with a maximum number of levels.", "IT-ML", 0, "-IT-ML"));
-
+		newVector.addElement(new Option("\tBuild the tree ordered by a criteria.", "IT-P", 0, "-IT-P"));
+		
 		newVector.addAll(Collections.list(super.listOptions()));
 		return newVector.elements();
 	}
@@ -151,7 +175,10 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 	 * ============================================================================
 	 * -IT-ML <br>
 	 * Build the tree with a maximum number of levels.
+	 * -IT-P <br>
+	 * Build the tree ordered by a criteria.
 	 * <p>
+	 * 
 	 * 
 	 * @return an enumeration of all the available options.
 	 */
@@ -164,6 +191,20 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 		} else {
 			m_ITmaximumLevel = 0;
 		}
+		
+		if (Utils.getFlag("IT-PL", options))
+			setITpriorityCriteria(new SelectedTag(Levelbylevel, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("IT-PP", options))
+			setITpriorityCriteria(new SelectedTag(Preorder, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("IT-PS", options))
+			setITpriorityCriteria(new SelectedTag(Size, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("IT-PG", options))
+			setITpriorityCriteria(new SelectedTag(Gainratio, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("IT-PGR", options))
+			setITpriorityCriteria(new SelectedTag(Gainratio_normalized, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		
+				//String m_ITpriorityCriteriaString = Utils.getOption("IT-P", options);
+
 		super.setOptions(options);
 	}
 
@@ -180,6 +221,13 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 
 		options.add("-IT-ML");
 	    options.add("" + m_ITmaximumLevel);
+	    
+	    if (m_ITpriorityCriteria == 1) options.add("-IT-PL");
+	    else if (m_ITpriorityCriteria == 2) options.add("-IT-PP");
+	    else if (m_ITpriorityCriteria == 3) options.add("-IT-PS");
+	    else if (m_ITpriorityCriteria == 4) options.add("-IT-PG");
+	    else if (m_ITpriorityCriteria == 5) options.add("-IT-PGR");
+	    
 		return options.toArray(new String[0]);
 	}
 
@@ -211,6 +259,43 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 		this.m_ITmaximumLevel = ITmaximumLevel;
 	}
 
+	/**
+	 * Returns the tip text for this property
+	 * 
+	 * @return tip text for this property suitable for displaying in the
+	 *         explorer/experimenter gui
+	 */
+	public String ITpriorityCriteriaTipText() {
+		return "Build the tree ordered by a criteria: LevelByLevel, Preorder, Size, Gainratio, Normalized Gainratio";
+	}
 
+	/**
+	 * Get the value of ITpriorityCriteria.
+	 * 
+	 * @return Value of ITpriorityCriteria.
+	 */
+	public SelectedTag getITpriorityCriteria() {
+		return new SelectedTag(m_ITpriorityCriteria,
+				TAGS_WAYS_TO_SET_PRIORITY_CRITERIA);
+	}
+
+	/**
+	 * Set the value of ITpriorityCriteria.
+	 * 
+	 * @param v Value to assign to ITpriorityCriteria.
+	 */
+
+	public void setITpriorityCriteria(SelectedTag newPriorityCriteria) throws Exception {
+		if (newPriorityCriteria.getTags() == TAGS_WAYS_TO_SET_PRIORITY_CRITERIA) 
+		{
+			int newPriority = newPriorityCriteria.getSelectedTag().getID();
+
+			if (newPriority == Levelbylevel || newPriority == Preorder || newPriority == Size || newPriority == Gainratio || newPriority == Gainratio_normalized)
+				m_ITpriorityCriteria = newPriority;
+			else 
+				throw new IllegalArgumentException("Wrong selection type, value should be: "
+						+ "between 1 and 5");
+		}
+	}
 
 }
