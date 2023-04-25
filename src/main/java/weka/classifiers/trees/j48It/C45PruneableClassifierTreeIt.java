@@ -2,6 +2,7 @@ package weka.classifiers.trees.j48It;
 
 import java.util.ArrayList;
 
+import weka.classifiers.trees.J48It;
 import weka.classifiers.trees.j48.C45PruneableClassifierTree;
 import weka.classifiers.trees.j48.C45Split;
 import weka.classifiers.trees.j48.ClassifierSplitModel;
@@ -30,15 +31,15 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	 * Builds the tree up to a maximum of depth levels. Set m_maximumLevel to 0 for
 	 * default.
 	 */
-	private int m_maximumLevel = 0;
+	private int m_maximumCriteria = 0;
 
 	/**
 	 * Builds the tree up to a maximum size. Set m_maximumSize to 0 for default.
 	 */
-	//private int m_maximumSize= 3;
+	// private int m_maximumSize= 3;
 
 	/** Indicates the criteria that should be used to build the tree */
-	private int m_priorityCriteria = 1;
+	private int m_priorityCriteria = J48It.Levelbylevel;
 
 	/**
 	 * Constructor for pruneable consolidated tree structure. Calls the superclass
@@ -55,7 +56,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	public C45PruneableClassifierTreeIt(ModelSelection toSelectLocModel, boolean pruneTree, float cf, boolean raiseTree,
 			boolean cleanup, boolean collapseTree, int ITmaximumLevel, int ITPriorityCriteria) throws Exception {
 		super(toSelectLocModel, pruneTree, cf, raiseTree, cleanup, collapseTree);
-		m_maximumLevel = ITmaximumLevel;
+		m_maximumCriteria = ITmaximumLevel;
 		m_priorityCriteria = ITPriorityCriteria;
 	}
 
@@ -71,7 +72,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	public void buildTree(Instances data, boolean keepData) throws Exception {
 
 		ArrayList<Object[]> list = new ArrayList<>();
-
+		
 		// add(Data, tree, orderValue, currentLevel)
 		list.add(new Object[] { data, this, null, 0 }); // The parent node is considered level 0
 
@@ -99,25 +100,28 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 			currentTree.m_sons = null;
 			currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
 
-
-			if (currentTree.m_localModel.numSubsets() > 1 && (m_maximumLevel == 0 || currentLevel < m_maximumLevel)) {
-					//&& (m_maximumSize == 0 || currentTree.m_order < m_maximumSize)) {
+			if ((currentTree.m_localModel.numSubsets() > 1) && (m_priorityCriteria == J48It.Original)
+					|| ((m_priorityCriteria == J48It.Levelbylevel) && (currentLevel < m_maximumCriteria))
+					|| ((m_priorityCriteria > J48It.Levelbylevel) && (currentTree.m_order < m_maximumCriteria))) {
+					
+				
 				ArrayList<Object[]> listSons = new ArrayList<>();
 				localInstances = currentTree.m_localModel.split(currentData);
 				currentData = null;
 				currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
 				for (int i = 0; i < currentTree.m_sons.length; i++) {
 					ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel,
-							m_pruneTheTree, m_CF, m_subtreeRaising, m_cleanup, m_collapseTheTree, m_maximumLevel, m_priorityCriteria);
+							m_pruneTheTree, m_CF, m_subtreeRaising, m_cleanup, m_collapseTheTree, m_maximumCriteria,
+							m_priorityCriteria);
 
-					if (m_priorityCriteria == 3) // Added by size, largest to smallest
+					if (m_priorityCriteria == J48It.Size) // Added by size, largest to smallest
 					{
 
 						orderValue = localInstances[i].numInstances();
 
 						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1 };
 						addSonOrderedByValue(list, son);
-					} else if (m_priorityCriteria == 4) // Added by gainratio, largest to smallest
+					} else if (m_priorityCriteria == J48It.Gainratio) // Added by gainratio, largest to smallest
 					{
 						ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt) newTree).m_toSelectModel
 								.selectModel(localInstances[i]);
@@ -131,8 +135,8 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 						}
 						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1 };
 						addSonOrderedByValue(list, son);
-					} else if (m_priorityCriteria == 5) // Added by gainratio normalized,
-																						// largest to smallest
+					} else if (m_priorityCriteria == J48It.Gainratio_normalized) // Added by gainratio normalized,
+					// largest to smallest
 					{
 
 						int numInstances = localInstances[i].numInstances();
@@ -160,11 +164,11 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 					localInstances[i] = null;
 				}
 
-				if (m_priorityCriteria == 1) { // Level by level
+				if (m_priorityCriteria == J48It.Levelbylevel) { // Level by level
 					list.addAll(listSons);
 				}
 
-				else if (m_priorityCriteria == 2) { // Preorder
+				else if (m_priorityCriteria == J48It.Preorder || m_priorityCriteria == J48It.Original) { // Preorder
 					listSons.addAll(list);
 					list = listSons;
 				}
@@ -177,9 +181,9 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 				}
 				currentData = null;
 			}
-
 			index++;
 		}
+		
 	}
 
 	/**
