@@ -31,15 +31,10 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	 * Builds the tree up to a maximum of depth levels. Set m_maximumLevel to 0 for
 	 * default.
 	 */
-	private int m_maximumCriteria = 0;
-
-	/**
-	 * Builds the tree up to a maximum size. Set m_maximumSize to 0 for default.
-	 */
-	// private int m_maximumSize= 3;
+	private int m_maximumCriteria;
 
 	/** Indicates the criteria that should be used to build the tree */
-	private int m_priorityCriteria = J48It.Levelbylevel;
+	private int m_priorityCriteria;
 
 	/**
 	 * Constructor for pruneable consolidated tree structure. Calls the superclass
@@ -72,9 +67,9 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	public void buildTree(Instances data, boolean keepData) throws Exception {
 
 		ArrayList<Object[]> list = new ArrayList<>();
-		
+
 		// add(Data, tree, orderValue, currentLevel)
-		list.add(new Object[] { data, this, null, 0 }); // The parent node is considered level 0
+		list.add(new Object[] { data, this, null, 0}); // The parent node is considered level 0
 
 		Instances[] localInstances;
 
@@ -84,6 +79,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 		while (list.size() > 0) {
 			Object[] current = list.get(0);
 			int currentLevel = (int) current[3];
+			//int currentNode = (int) current[4];
 			list.set(0, null); // Null to free up memory
 			list.remove(0);
 
@@ -100,11 +96,11 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 			currentTree.m_sons = null;
 			currentTree.m_localModel = currentTree.m_toSelectModel.selectModel(currentData);
 
-			if ((currentTree.m_localModel.numSubsets() > 1) && (m_priorityCriteria == J48It.Original)
+			if ((currentTree.m_localModel.numSubsets() > 1) && ((m_priorityCriteria == J48It.Original)
 					|| ((m_priorityCriteria == J48It.Levelbylevel) && (currentLevel < m_maximumCriteria))
-					|| ((m_priorityCriteria > J48It.Levelbylevel) && (currentTree.m_order < m_maximumCriteria))) {
-					
-				
+					|| ((m_priorityCriteria > J48It.Levelbylevel) && (currentTree.m_order < m_maximumCriteria)))) {
+
+
 				ArrayList<Object[]> listSons = new ArrayList<>();
 				localInstances = currentTree.m_localModel.split(currentData);
 				currentData = null;
@@ -113,7 +109,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 					ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel,
 							m_pruneTheTree, m_CF, m_subtreeRaising, m_cleanup, m_collapseTheTree, m_maximumCriteria,
 							m_priorityCriteria);
-
+					
 					if (m_priorityCriteria == J48It.Size) // Added by size, largest to smallest
 					{
 
@@ -183,7 +179,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 			}
 			index++;
 		}
-		
+
 	}
 
 	/**
@@ -204,7 +200,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 				text.append("|   ");
 			}
 			text.append("[" + m_order + "] ");
-			text.append(m_isEmpty);
+			//text.append(m_isEmpty);
 			text.append(m_localModel.leftSide(m_train));
 			text.append(m_localModel.rightSide(i, m_train));
 			if (m_sons[i].isLeaf()) {

@@ -168,7 +168,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
    * @param data the data for which the tree structure is to be generated.
    * @param keepData is training data to be kept?
    * @throws Exception if something goes wrong
-   */
+   */ 
 
   public void buildTree(Instances data, boolean keepData) throws Exception {
 
@@ -271,7 +271,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
    * 
    * @param justHeaderInfo
    */
-  public final void cleanup(Instances justHeaderInfo) {
+  public void cleanup(Instances justHeaderInfo) {
 
     m_train = justHeaderInfo;
     m_test = null;

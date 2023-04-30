@@ -146,8 +146,8 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 	 * Options to build the tree partially (the most important change is that it is
 	 * run iteratively (IT) instead of recursively).
 	 * ============================================================================
-	 * -IT-ML <br>
-	 * Build the tree with a maximum number of levels.
+	 * -IT-MC <br>
+	 * Build the tree with a maximum number of levels or nodes.
 	 * <p>
 	 * 
 	 * @return an enumeration of all the available options.
@@ -156,7 +156,7 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 	public Enumeration<Option> listOptions() {
 		Vector<Option> newVector = new Vector<Option>(1);
 
-		newVector.addElement(new Option("\tBuild the tree with a maximum number of levels.", "IT-ML", 0, "-IT-ML"));
+		newVector.addElement(new Option("\tBuild the tree with a maximum number of levels or nodes.", "IT-MC", 0, "-IT-MC"));
 		newVector.addElement(new Option("\tBuild the tree as it was originally built.", "IT-PO", 0, "-IT-PO"));
 		newVector.addElement(new Option("\tBuild the tree level by level.", "IT-PL", 0, "-IT-PL"));
 		newVector.addElement(new Option("\tBuild the tree in preorder.", "IT-PP", 0, "-IT-PP"));
@@ -180,8 +180,8 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 	 * Options to build the tree partially (the most important change is that it is
 	 * run iteratively (IT) instead of recursively).
 	 * ============================================================================
-	 * -IT-ML <br>
-	 * Build the tree with a maximum number of levels.
+	 * -IT-MC <br>
+	 * Build the tree with a maximum number of levels or nodes.
 	 * -IT-P <br>
 	 * Build the tree ordered by a criteria.
 	 * <p>
@@ -191,7 +191,7 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 	 */
 	@Override
 	public void setOptions(String[] options) throws Exception {
-		String m_ITmaximumCriteriaString = Utils.getOption("IT-ML", options);
+		String m_ITmaximumCriteriaString = Utils.getOption("IT-MC", options);
 
 		if (m_ITmaximumCriteriaString.length() != 0) {
 			m_ITmaximumCriteria = Integer.parseInt(m_ITmaximumCriteriaString);
@@ -225,7 +225,7 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 		Vector<String> options = new Vector<String>();
 		Collections.addAll(options, super.getOptions());
 
-		options.add("-IT-ML");
+		options.add("-IT-MC");
 	    options.add("" + m_ITmaximumCriteria);
 	    
 	    if (m_ITpriorityCriteria == 0) options.add("-IT-PO");
