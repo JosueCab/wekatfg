@@ -33,6 +33,7 @@ import weka.classifiers.trees.j48.C45ModelSelection;
 import weka.classifiers.trees.j48.ClassifierTree;
 import weka.classifiers.trees.j48.ModelSelection;
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedModelSelection;
+import weka.classifiers.trees.j48ItPartiallyConsolidated.C45ItPartiallyConsolidatedPruneableClassifierTree;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45ModelSelectionExtended;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45PartiallyConsolidatedPruneableClassifierTree;
 import weka.core.AdditionalMeasureProducer;
@@ -306,8 +307,8 @@ public class J48ItPartiallyConsolidated
 		C45ModelSelectionExtended baseModelToForceDecision = new C45ModelSelectionExtended(m_minNumObj, instances, 
 				m_useMDLcorrection, m_doNotMakeSplitPointActualValue);
 		// TODO Implement the option reducedErrorPruning of J48
-		C45PartiallyConsolidatedPruneableClassifierTree localClassifier =
-				new C45PartiallyConsolidatedPruneableClassifierTree(modSelection, baseModelToForceDecision,
+		C45ItPartiallyConsolidatedPruneableClassifierTree localClassifier =
+				new C45ItPartiallyConsolidatedPruneableClassifierTree(modSelection, baseModelToForceDecision,
 						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length);
 
 		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent);
