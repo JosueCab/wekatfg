@@ -69,17 +69,19 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 		ArrayList<Object[]> list = new ArrayList<>();
 
 		// add(Data, tree, orderValue, currentLevel)
-		list.add(new Object[] { data, this, null, 0}); // The parent node is considered level 0
+		list.add(new Object[] { data, this, null, 0, 0}); // The parent node is considered level 0
 
 		Instances[] localInstances;
 
 		int index = 0;
 		double orderValue;
+		
+		int usedNodes = 0;
 
 		while (list.size() > 0) {
 			Object[] current = list.get(0);
 			int currentLevel = (int) current[3];
-			//int currentNode = (int) current[4];
+
 			list.set(0, null); // Null to free up memory
 			list.remove(0);
 
@@ -98,7 +100,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 
 			if ((currentTree.m_localModel.numSubsets() > 1) && ((m_priorityCriteria == J48It.Original)
 					|| ((m_priorityCriteria == J48It.Levelbylevel) && (currentLevel < m_maximumCriteria))
-					|| ((m_priorityCriteria > J48It.Levelbylevel) && (currentTree.m_order < m_maximumCriteria)))) {
+					|| ((m_priorityCriteria > J48It.Levelbylevel) && (usedNodes < m_maximumCriteria)))) {
 
 
 				ArrayList<Object[]> listSons = new ArrayList<>();
@@ -170,6 +172,8 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 				}
 
 				listSons = null;
+				usedNodes ++;
+				
 			} else {
 				currentTree.m_isLeaf = true;
 				if (Utils.eq(currentData.sumOfWeights(), 0)) {
