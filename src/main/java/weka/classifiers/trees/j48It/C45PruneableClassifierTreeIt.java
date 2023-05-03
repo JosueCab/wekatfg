@@ -7,6 +7,7 @@ import weka.classifiers.trees.j48.C45PruneableClassifierTree;
 import weka.classifiers.trees.j48.C45Split;
 import weka.classifiers.trees.j48.ClassifierSplitModel;
 import weka.classifiers.trees.j48.ClassifierTree;
+import weka.classifiers.trees.j48.Distribution;
 import weka.classifiers.trees.j48.ModelSelection;
 import weka.core.Instances;
 import weka.core.Utils;
@@ -35,6 +36,9 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 
 	/** Indicates the criteria that should be used to build the tree */
 	private int m_priorityCriteria;
+	
+	 /** Distribution of class values. */  
+	  protected Distribution m_distribution;  
 
 	/**
 	 * Constructor for pruneable consolidated tree structure. Calls the superclass
@@ -68,15 +72,15 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 
 		ArrayList<Object[]> list = new ArrayList<>();
 
-		// add(Data, tree, orderValue, currentLevel)
-		list.add(new Object[] { data, this, null, 0, 0}); // The parent node is considered level 0
+						 // add(Data, tree, orderValue, currentLevel)
+		list.add(new Object[] { data, this, null, 0}); // The parent node is considered level 0
 
 		Instances[] localInstances;
 
 		int index = 0;
 		double orderValue;
 		
-		int usedNodes = 0;
+		int internalNodes = 0;
 
 		while (list.size() > 0) {
 			Object[] current = list.get(0);
@@ -100,7 +104,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 
 			if ((currentTree.m_localModel.numSubsets() > 1) && ((m_priorityCriteria == J48It.Original)
 					|| ((m_priorityCriteria == J48It.Levelbylevel) && (currentLevel < m_maximumCriteria))
-					|| ((m_priorityCriteria > J48It.Levelbylevel) && (usedNodes < m_maximumCriteria)))) {
+					|| ((m_priorityCriteria > J48It.Levelbylevel) && (internalNodes < m_maximumCriteria)))) {
 
 
 				ArrayList<Object[]> listSons = new ArrayList<>();
@@ -115,7 +119,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 					if (m_priorityCriteria == J48It.Size) // Added by size, largest to smallest
 					{
 
-						orderValue = localInstances[i].numInstances();
+						orderValue = currentTree.m_localModel.distribution().perBag(i);
 
 						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1 };
 						addSonOrderedByValue(list, son);
@@ -137,7 +141,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 					// largest to smallest
 					{
 
-						int numInstances = localInstances[i].numInstances();
+						double size = currentTree.m_localModel.distribution().perBag(i);
 						double gainRatio;
 						ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt) newTree).m_toSelectModel
 								.selectModel(localInstances[i]);
@@ -149,7 +153,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 
 							gainRatio = (double) Double.MIN_VALUE;
 						}
-						orderValue = numInstances * gainRatio;
+						orderValue = size * gainRatio;
 						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1 };
 						addSonOrderedByValue(list, son);
 
@@ -172,7 +176,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 				}
 
 				listSons = null;
-				usedNodes ++;
+				internalNodes ++;
 				
 			} else {
 				currentTree.m_isLeaf = true;
