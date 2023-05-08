@@ -25,6 +25,7 @@
 package weka.classifiers.trees;
 
 
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -194,7 +195,7 @@ import weka.core.TechnicalInformation.Type;
  * @version $Revision: 0.3 $
  */
 public class J48ItPartiallyConsolidated
-	extends J48Consolidated
+	extends J48PartiallyConsolidated
 	implements OptionHandler, Drawable, Matchable, Sourcable,
 				WeightedInstancesHandler, Summarizable, AdditionalMeasureProducer,
 				TechnicalInformationHandler {
@@ -205,30 +206,32 @@ public class J48ItPartiallyConsolidated
 	/** Options related to PCTBagging algorithm
 	 *  (Prefix PCTB added to the option names in order to appear together in the graphical interface)
 	 ********************************************************************************/
-	/** The consolidation percent. It indicates the number of inner nodes to leave as consolidated as a percent 
-	 * according to the inner nodes of the whole consolidated tree. It accepts values between 0 and 100.
-	 */
-	protected float m_PCTBconsolidationPercent = (float)20.0;
-	
-	/** Options to visualize the set of base trees */
-	public static final int Visualize_None = 1;
-	public static final int Visualize_FirstOnes = 2;
-	public static final int Visualize_All = 3;
 
-	/** Strings related to the options to visualize the set of base trees */
-	public static final Tag[] TAGS_VISUALIZE_BASE_TREES = {
-		new Tag(Visualize_None, "None"),
-		new Tag(Visualize_FirstOnes, "Only the first ten"),
-		new Tag(Visualize_All, "All")
+	/** Build the tree level by level, rather than in pre-order */
+	protected int m_ITPCTmaximumCriteria = 99999;
+	
+	/** Ways to set the priority criteria option */
+	public static final int Original = 0;
+	public static final int Levelbylevel = 1;
+	public static final int Preorder = 2;
+	public static final int Size = 3;
+	public static final int Gainratio = 4;
+	public static final int Gainratio_normalized = 5;
+
+	
+	/** Strings related to the ways to set the priority criteria option */
+	public static final Tag[] TAGS_WAYS_TO_SET_PRIORITY_CRITERIA = {
+			new Tag(Original, "Original - Without maximums"),
+			new Tag(Levelbylevel, "Level by level"),
+			new Tag(Preorder, "Node by node - Preorder"),
+			new Tag(Size, "Node by node - Size"),
+			new Tag(Gainratio, "Node by node - Gainratio"),
+			new Tag(Gainratio_normalized, "Node by node - Normalized gainratio"),
+
 	};
 	
-	/** Visualize the base trees: None, only the first ten (if they exist) or all */
-	protected int m_PCTBvisualizeBaseTrees = Visualize_FirstOnes;
-
-	/** Array for storing the generated base classifiers.
-	 * (based on Bagging.java written by Eibe Frank eta al)
-	 * */
-	protected ClassifierTree[] m_Classifiers;
+	private int m_ITPCTpriorityCriteria = Original;
+	
 
 	/**
 	 * Returns a string describing the classifier
@@ -309,7 +312,7 @@ public class J48ItPartiallyConsolidated
 		// TODO Implement the option reducedErrorPruning of J48
 		C45ItPartiallyConsolidatedPruneableClassifierTree localClassifier =
 				new C45ItPartiallyConsolidatedPruneableClassifierTree(modSelection, baseModelToForceDecision,
-						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length);
+						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length, m_ITPCTmaximumCriteria, m_ITPCTpriorityCriteria);
 
 		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent);
 
@@ -323,71 +326,6 @@ public class J48ItPartiallyConsolidated
 		((C45ModelSelection) baseModelToForceDecision).cleanup();
 	}
 
-	/**
-	 * Calculates the class membership probabilities for the given test instance.
-	 * (based on Bagging.java)
-	 * 
-	 * @param instance the instance to be classified
-	 * @return predicted class probability distribution
-	 * @throws Exception if distribution can't be computed successfully
-	 * 
-	 * @see weka.classifiers.meta.Bagging#distributionForInstance(weka.core.Instance)
-	 */
-	public double[] distributionForInstance(Instance instance) throws Exception {
-		/** Number of Samples. */
-		int numberSamples = m_Classifiers.length;
-		double[] sums = new double[instance.numClasses()], newProbs;
-
-		for (int i = 0; i < numberSamples; i++) {
-			if (instance.classAttribute().isNumeric() == true) {
-				sums[0] += m_Classifiers[i].classifyInstance(instance);
-			} else {
-				newProbs = m_Classifiers[i].distributionForInstance(instance, m_useLaplace);
-				for (int j = 0; j < newProbs.length; j++)
-					sums[j] += newProbs[j];
-			}
-		}
-		if (instance.classAttribute().isNumeric() == true) {
-			sums[0] /= numberSamples;
-			return sums;
-		} else if (Utils.eq(Utils.sum(sums), 0)) {
-			return sums;
-		} else {
-			Utils.normalize(sums);
-			return sums;
-		}
-	}
-
-	/**
-	 * Classifies an instance.
-	 * (based on J48.java)
-	 * @see weka.classifiers.trees.J48.classifyInstance(Instance)
-	 * 
-	 * @param instance the instance to classify
-	 * @return the classification for the instance
-	 * @throws Exception if instance can't be classified successfully
-	 */
-	@Override
-	public double classifyInstance(Instance instance) throws Exception {
-		double[] distribution = new double[instance.numClasses()];
-
-		distribution = distributionForInstance(instance);
-		
-		double maxProb = -1;
-	    double currentProb;
-	    int maxIndex = 0;
-	    int j;
-
-	    for (j = 0; j < instance.numClasses(); j++) {
-	      currentProb = distribution[j];
-	      if (Utils.gr(currentProb, maxProb)) {
-	        maxIndex = j;
-	        maxProb = currentProb;
-	      }
-	    }
-
-	    return maxIndex;
-	}
 
 
 	/**
@@ -470,308 +408,178 @@ public class J48ItPartiallyConsolidated
 	 * 
 	 * @return an enumeration of all the available options.
 	 */
+	
+	/**
+	 * Returns an enumeration describing the available options.
+	 * 
+	 * Valid options are:
+	 * <p>
+	 * 
+	 * J48 options<br/>
+	 * =============<br/>
+	 *
+	 * Options to build the tree partially (the most important change is that it is
+	 * run iteratively (IT) instead of recursively).
+	 * ============================================================================
+	 * -ITPCT-MC <br>
+	 * Build the tree with a maximum number of levels or nodes.
+	 * <p>
+	 * 
+	 * @return an enumeration of all the available options.
+	 */
+	@Override
 	public Enumeration<Option> listOptions() {
+		Vector<Option> newVector = new Vector<Option>(1);
 
-		Vector<Option> newVector = new Vector<Option>();
-
-		// J48 and J48Consolidated options
-		// ===============================
-	    Enumeration<Option> en;
-	    en = super.listOptions();
-	    while (en.hasMoreElements())
-	    	newVector.addElement((Option) en.nextElement());
-
-		// Options to leave partially consolidated the built consolidated tree (PCTB)
-		// =========================================================================
-		newVector.
-		addElement(new Option(
-				"\tDetermines the number of inner nodes to leave as consolidated as a percent\n" +
-				"\taccording to the inner nodes of the whole consolidated tree.\n" +
-				"\t(default 20.0)",
-				"PCTB-C", 1, "-PCTB-C <consolidation percent>"));
-
-		newVector.
-		addElement(new Option(
-				"\tDetermines how many base trees will be shown:\n" +
-				"\tNone, only the first ten (if they exist) or all.\n" +
-				"\t(default: only the first ten)",
-				"PCTB-V", 1, "-PCTB-V <mode>"));
-
+		newVector.addElement(new Option("\tBuild the tree with a maximum number of levels or nodes.", "ITPCT-MC", 0, "-ITPCT-MC"));
+		newVector.addElement(new Option("\tBuild the tree as it was originally built.", "ITPCT-PO", 0, "-ITPCT-PO"));
+		newVector.addElement(new Option("\tBuild the tree level by level.", "ITPCT-PL", 0, "-ITPCT-PL"));
+		newVector.addElement(new Option("\tBuild the tree in preorder.", "ITPCT-PP", 0, "-ITPCT-PP"));
+		newVector.addElement(new Option("\tBuild the tree ordered by size.", "ITPCT-PS", 0, "-ITPCT-PS"));
+		newVector.addElement(new Option("\tBuild the tree ordered by gainratio.", "ITPCT-PG", 0, "-ITPCT-PG"));
+		newVector.addElement(new Option("\tBuild the tree ordered by normalized gainratio.", "ITPCT-PGN", 0, "-ITPCT-PGN"));
+		
+		newVector.addAll(Collections.list(super.listOptions()));
 		return newVector.elements();
 	}
 	
 	/**
-	 * Parses a given list of options.
+	 * Returns an enumeration describing the available options.
 	 * 
-   <!-- options-start -->
-	 * Valid options are: <p/>
+	 * Valid options are:
+	 * <p>
 	 * 
-	 * Options to set the Resampling Method (RM) for the generation of samples
-	 *  to use in the consolidation process
-	 * ============================================================================ 
-	 * <pre> -RM-C
-	 *  Determines that the way to set the number of samples to be generated will be based on
-	 *  a coverage value as a percent. In the case this option is not set, the number of samples
-	 *  will be determined using a fixed value. 
-	 *  (Set by default)</pre>
-	 * 
-	 * <pre> -RM-N &lt;number of samples&gt;
-	 *  Number of samples to be generated for use in the construction of the consolidated tree.
-	 *  It can be set as a fixed value or based on a coverage value as a percent, when -RM-C option
-	 *  is used, which guarantees the number of samples necessary to cover adequately the examples 
-	 *  of the original sample
-	 *  (default 5 for a fixed value or 99% for the case based on a coverage value)</pre>
-	 * 
-	 * <pre> -RM-R
-	 *  Determines whether or not replacement is used when generating the samples.
-	 *  (default true)</pre>
-	 * 
-	 * <pre> -RM-B &lt;Size of each sample(&#37;)&gt;
-	 *  Size of each sample(bag), as a percentage of the training set size.
-	 *  Combined with the option &lt;distribution minority class&gt; accepts:
-	 *  * -1 (sizeOfMinClass): The size of the minority class  
-	 *  * -2 (maxSize): Maximum size taking into account &lt;distribution minority class&gt;
-	 *  *           and using no replacement
-	 *  (default -2(maxSize))</pre>
-	 * 
-	 * <pre> -RM-D &lt;distribution minority class&gt;
-	 *  Determines the new value of the distribution of the minority class, if we want to change it.
-	 *  It can be one of the following values:
-	 *  * A value between 0 and 100 to change the portion of minority class instances in the new samples
-	 *    (If the dataset is multi-class, only the special value 50.0 will be accepted to balance the classes)
-	 *  * -1 (free): Works with the instances without taking into account their class  
-	 *  * -2 (stratified): Maintains the original class distribution in the new samples
-	 *  (default 50.0)</pre>
-	 * 
-	 * Options to leave partially consolidated the built consolidated tree (PCTB)
-	 * ============================================================================ 
-	 * <pre> -PCTB-C consolidation percent
-	 * Determines the number of inner nodes to leave as consolidated as a percent 
-	 * according to the inner nodes of the whole consolidated tree.  
-	 * (Default: 20.0)</pre>
-	 * 
-	 * <pre> -PCTB-V mode <br>
-	 * Determines how many base trees will be shown:
-	 *  None, only the first ten (if they exist) or all.  
-	 * (Default: only the first ten)<pre>
-	 * 
-   <!-- options-end -->
+	 * J48 options<br/>
+	 * =============<br/>
 	 *
-	 * @param options the list of options as an array of strings
-	 * @throws Exception if an option is not supported
+	 * Options to build the tree partially (the most important change is that it is
+	 * run iteratively (IT) instead of recursively).
+	 * ============================================================================
+	 * -ITPCT-MC <br>
+	 * Build the tree with a maximum number of levels or nodes.
+	 * -ITPCT-P <br>
+	 * Build the tree ordered by a criteria.
+	 * <p>
+	 * 
+	 * 
+	 * @return an enumeration of all the available options.
 	 */
+	@Override
 	public void setOptions(String[] options) throws Exception {
-	    
-		// Options to leave partially consolidated the built consolidated tree (PCTB)
-		// =========================================================================
-		String PCTBconsolidationPercentString = Utils.getOption("PCTB-C", options);
-		if (PCTBconsolidationPercentString.length() != 0)
-			setPCTBconsolidationPercent(Float.valueOf(PCTBconsolidationPercentString));
-		else
-			setPCTBconsolidationPercent((float)20.0);
-		String PCTBvisualizeBaseTreesString = Utils.getOption("PCTB-V", options);
-		if (PCTBvisualizeBaseTreesString.length() != 0)
-			setPCTBvisualizeBaseTrees(new SelectedTag(Integer.parseInt(PCTBvisualizeBaseTreesString), TAGS_VISUALIZE_BASE_TREES));
-		else
-			setPCTBvisualizeBaseTrees(new SelectedTag(Visualize_FirstOnes, TAGS_VISUALIZE_BASE_TREES)); // default: only the first ten
-		
+		String m_ITPCTmaximumCriteriaString = Utils.getOption("ITPCT-MC", options);
 
-		// J48 and J48Consolidated options
-		// ===============================
-	    super.setOptions(options);
+		if (m_ITPCTmaximumCriteriaString.length() != 0) {
+			m_ITPCTmaximumCriteria = Integer.parseInt(m_ITPCTmaximumCriteriaString);
+		} else {
+			m_ITPCTmaximumCriteria = 0;
+		}
+		if (Utils.getFlag("ITPCT-PO", options))
+			setITPCTpriorityCriteria(new SelectedTag(Original, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("ITPCT-PL", options))
+			setITPCTpriorityCriteria(new SelectedTag(Levelbylevel, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("ITPCT-PP", options))
+			setITPCTpriorityCriteria(new SelectedTag(Preorder, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("ITPCT-PS", options))
+			setITPCTpriorityCriteria(new SelectedTag(Size, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("ITPCT-PG", options))
+			setITPCTpriorityCriteria(new SelectedTag(Gainratio, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		else if (Utils.getFlag("ITPCT-PGR", options))
+			setITPCTpriorityCriteria(new SelectedTag(Gainratio_normalized, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
+		
+		super.setOptions(options);
 	}
 
 	/**
 	 * Gets the current settings of the Classifier.
-	 *
+	 * 
 	 * @return an array of strings suitable for passing to setOptions
 	 */
-	public String [] getOptions() {
+	@Override
+	public String[] getOptions() {
 
-		Vector<String> result = new Vector<String>();
+		Vector<String> options = new Vector<String>();
+		Collections.addAll(options, super.getOptions());
 
-		// J48 and J48Consolidated options
-		// ===============================
-		String[] options = super.getOptions();
-		for (int i = 0; i < options.length; i++)
-			result.add(options[i]);
-
-		// Options to leave partially consolidated the built consolidated tree (PCTB)
-		// =========================================================================
-		result.add("-PCTB-C");
-		result.add("" + m_PCTBconsolidationPercent);
-
-		result.add("-PCTB-V");
-		result.add("" + m_PCTBvisualizeBaseTrees);
-
-		return (String[]) result.toArray(new String[result.size()]);	  
+		options.add("-ITPCT-MC");
+	    options.add("" + m_ITPCTmaximumCriteria);
+	    
+	    if (m_ITPCTpriorityCriteria == 0) options.add("-ITPCT-PO");
+	    else if (m_ITPCTpriorityCriteria == 1) options.add("-ITPCT-PL");
+	    else if (m_ITPCTpriorityCriteria == 2) options.add("-ITPCT-PP");
+	    else if (m_ITPCTpriorityCriteria == 3) options.add("-ITPCT-PS");
+	    else if (m_ITPCTpriorityCriteria == 4) options.add("-ITPCT-PG");
+	    else if (m_ITPCTpriorityCriteria == 5) options.add("-ITPCT-PGR");
+	    
+		return options.toArray(new String[0]);
 	}
 
 	/**
-	 * Returns a description of the classifier.
+	 * Returns the tip text for this property
 	 * 
-	 * @return a description of the classifier
+	 * @return tip text for this property suitable for displaying in the
+	 *         explorer/experimenter gui
 	 */
-	public String toString() {
-		String st;
-		st = "J48PartiallyConsolidated-Bagging classifier\n";
-		// Add a separator
-		char[] ch_line = new char[st.length()];
-		for (int i = 0; i < ch_line.length; i++)
-			ch_line[i] = '-';
-		String line = String.valueOf(ch_line);
-		line += "\n";
-		st += "Consolidation percent = " + Utils.doubleToString(m_PCTBconsolidationPercent,2) + "%\n";
-		st += line;
-		st += super.toString();
-		if (m_PCTBvisualizeBaseTrees > Visualize_None) {
-			/** Base tree vector */
-			if (m_Classifiers != null){
-				int maxBaseTrees;
-				st += line;
-				if ((m_PCTBvisualizeBaseTrees == Visualize_All) || (m_Classifiers.length <= 10)) {
-					maxBaseTrees = m_Classifiers.length;
-					st += "Set of " + m_Classifiers.length + " base trees:\n";
-				}
-				else {
-					maxBaseTrees = 10;
-					st += "Set of " + m_Classifiers.length + " base trees (*Only the first ten!):\n";
-				}
-				for (int iSample = 0; iSample < maxBaseTrees; iSample++){
-					st += line;
-					st += iSample + "-th base tree:\n";
-					st += m_Classifiers[iSample].toString();
-				}
-			}
-		}
-		return st;
+	public String ITPCTmaximumCriteriaTipText() {
+		return "Build the tree with a maximum number of levels, if it is 0 the default levels are built";
 	}
 
 	/**
-	 * Returns the meta-classifier as Java source code.
-	 * (based on toSource() function of AdaBoostM1 class)
-	 *
-	 * @see weka.classifiers.meta.AdaBoostM1.toSource(String)
-	 *
-	 * @param className the classname of the generated code
-	 * @return the tree as Java source code
-	 * @throws Exception if something goes wrong
+	 * Get the value of ITPCTmaximumCriteria.
+	 * 
+	 * @return Value of ITPCTmaximumCriteria.
 	 */
-	public String toSource(String className) throws Exception {
-		if (m_Classifiers == null) {
-			throw new Exception("No model built yet");
+	public int getITPCTmaximumCriteria() {
+		return m_ITPCTmaximumCriteria;
+	}
+
+	/**
+	 * Set the value of ITPCTmaximumCriteria.
+	 * 
+	 * @param v Value to assign to ITPCTmaximumCriteria.
+	 */
+	public void setITPCTmaximumCriteria(int ITPCTmaximumCriteria) {
+		this.m_ITPCTmaximumCriteria = ITPCTmaximumCriteria;
+	}
+
+	/**
+	 * Returns the tip text for this property
+	 * 
+	 * @return tip text for this property suitable for displaying in the
+	 *         explorer/experimenter gui
+	 */
+	public String ITPCTpriorityCriteriaTipText() {
+		return "Build the tree ordered by a criteria: Original (without maximums), LevelByLevel, Preorder, Size, Gainratio, Normalized Gainratio";
+	}
+
+	/**
+	 * Get the value of ITPCTpriorityCriteria.
+	 * 
+	 * @return Value of ITPCTpriorityCriteria.
+	 */
+	public SelectedTag getITPCTpriorityCriteria() {
+		return new SelectedTag(m_ITPCTpriorityCriteria,
+				TAGS_WAYS_TO_SET_PRIORITY_CRITERIA);
+	}
+
+	/**
+	 * Set the value of ITPCTpriorityCriteria.
+	 * 
+	 * @param v Value to assign to ITPCTpriorityCriteria.
+	 */
+
+	public void setITPCTpriorityCriteria(SelectedTag newPriorityCriteria) throws Exception {
+		if (newPriorityCriteria.getTags() == TAGS_WAYS_TO_SET_PRIORITY_CRITERIA) 
+		{
+			int newPriority = newPriorityCriteria.getSelectedTag().getID();
+
+			if (newPriority == Original || newPriority == Levelbylevel || newPriority == Preorder || newPriority == Size || newPriority == Gainratio || newPriority == Gainratio_normalized)
+				m_ITPCTpriorityCriteria = newPriority;
+			else 
+				throw new IllegalArgumentException("Wrong selection type, value should be: "
+						+ "between 0 and 5");
 		}
-		Instances data = m_root.getTrainingData();
-		int numClasses = data.numClasses();
-
-		/** Number of Samples. */
-		int numberSamples = m_Classifiers.length;
-		StringBuffer text = new StringBuffer("class ");
-		text.append(className).append(" {\n\n");
-
-		text.append("  public static double classify(Object[] i) throws Exception {\n");
-
-		if (numberSamples == 1) {
-			text.append("    return " + className + "_0.classify(i);\n");
-		} else {
-			text.append("    double [] sums = new double [" + numClasses + "];\n");
-			for (int i = 0; i < numberSamples; i++) {
-				text.append("    sums[(int) " + className + '_' + i
-						+ ".classify(i)] += (double)1 ;\n");
-			}
-			text.append("    double maxV = sums[0];\n" + "    int maxI = 0;\n"
-					+ "    for (int j = 1; j < " + numClasses + "; j++) {\n"
-					+ "      if (sums[j] > maxV) { maxV = sums[j]; maxI = j; }\n"
-					+ "    }\n    return (double) maxI;\n");
-		}
-		text.append("  }\n}\n");
-
-		for (int i = 0; i < m_Classifiers.length; i++) {
-			/**
-			 * Based on toSource() function of J48 class
-			 *
-			 * @see weka.classifiers.trees.J48.toSource(String) 
-			 */
-			StringBuffer[] sourceTree = ((ClassifierTree) m_Classifiers[i]).toSource(className + '_' + i);
-			String sourceClas = "class " + className + '_' + i + " {\n\n"
-				      + "  public static double classify(Object[] i)\n"
-				      + "    throws Exception {\n\n" + "    double p = Double.NaN;\n"
-				      + sourceTree[0] // Assignment code
-				      + "    return p;\n" + "  }\n" + sourceTree[1] // Support code
-				      + "}\n";
-			text.append(sourceClas);
-		}
-		return text.toString();
 	}
 	
-	/**
-	 * Returns the tip text for this property
-	 * @return tip text for this property suitable for
-	 * displaying in the explorer/experimenter gui
-	 */
-	public String PCTBconsolidationPercentTipText() {
-		return "Consolidation percent for use after the consolidation process";
-	}
 
-	/**
-	 * Get the value of ConsolidationPercent.
-	 *
-	 * @return Value of ConsolidationPercent.
-	 */
-	public float getPCTBconsolidationPercent() {
-
-		return m_PCTBconsolidationPercent;
-	}
-
-	/**
-	 * Set the value of ConsolidationPercetnt.
-	 *
-	 * @param v Value to assign to ConsolidationPercent.
-	 * @throws Exception if an option is not supported
-	 */
-	public void setPCTBconsolidationPercent(float v) throws Exception {
-		if ((v < 0) || (v > 100))
-			throw new Exception("The consolidation percent (%) has to be a value greater than or equal to zero and smaller " +
-					"than or equal to 100!");
-		m_PCTBconsolidationPercent = v;
-	}
-
-	/**
-	 * Returns the tip text for this property
-	 * @return tip text for this property suitable for
-	 * displaying in the explorer/experimenter gui
-	 */
-	public String PCTBvisualizeBaseTreesTipText() {
-		return "Mode to visualize the set of base trees: None, only the first ten or all";
-	}
-
-	/**
-	 * Get the value of visualizeBaseTrees.
-	 *
-	 * @return Value of visualizeBaseTrees.
-	 */
-	public SelectedTag getPCTBvisualizeBaseTrees() {
-	    return new SelectedTag(m_PCTBvisualizeBaseTrees,
-	    		TAGS_VISUALIZE_BASE_TREES);
-	}
-
-	/**
-	 * Set the value of visualizeBaseTrees.
-	 *
-	 * @param mode Value to assign to visualizeBaseTrees.
-	 * @throws Exception if an option is not supported
-	 */
-	public void setPCTBvisualizeBaseTrees(SelectedTag mode) throws Exception {
-	  	if (mode.getTags() == TAGS_VISUALIZE_BASE_TREES) 
-	  	{
-	  		int newMode = mode.getSelectedTag().getID();
-	  		
-		    if (newMode == Visualize_None || newMode == Visualize_FirstOnes || newMode == Visualize_All)
-		    	m_PCTBvisualizeBaseTrees = newMode;
-		    else 
-		    	throw new IllegalArgumentException("Wrong selection type, value should be: "
-		                                           + "between 1 and 3");
-		 }
-	}
 
 }

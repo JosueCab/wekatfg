@@ -36,27 +36,27 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 
 	/** Indicates the criteria that should be used to build the tree */
 	private int m_priorityCriteria;
-	
-	 /** Distribution of class values. */  
-	  protected Distribution m_distribution;  
+
 
 	/**
 	 * Constructor for pruneable consolidated tree structure. Calls the superclass
 	 * constructor.
 	 *
-	 * @param toSelectLocModel selection method for local splitting model
-	 * @param pruneTree        true if the tree is to be pruned
-	 * @param cf               the confidence factor for pruning
-	 * @param raiseTree        true if subtree raising has to be performed
-	 * @param cleanup          true if cleanup has to be done
-	 * @param collapseTree     true if collapse has to be done
+	 * @param toSelectLocModel 		selection method for local splitting model
+	 * @param pruneTree        		true if the tree is to be pruned
+	 * @param cf               		the confidence factor for pruning
+	 * @param raiseTree        		true if subtree raising has to be performed
+	 * @param cleanup          		true if cleanup has to be done
+	 * @param collapseTree     		true if collapse has to be done
+	 * @param ITmaximumCriteria 	maximum number of nodes or levels
+	 * @param ITpriorityCriteria 	criteria to build the tree
 	 * @throws Exception if something goes wrong
 	 */
 	public C45PruneableClassifierTreeIt(ModelSelection toSelectLocModel, boolean pruneTree, float cf, boolean raiseTree,
-			boolean cleanup, boolean collapseTree, int ITmaximumLevel, int ITPriorityCriteria) throws Exception {
+			boolean cleanup, boolean collapseTree, int ITmaximumCriteria, int ITpriorityCriteria) throws Exception {
 		super(toSelectLocModel, pruneTree, cf, raiseTree, cleanup, collapseTree);
-		m_maximumCriteria = ITmaximumLevel;
-		m_priorityCriteria = ITPriorityCriteria;
+		m_maximumCriteria = ITmaximumCriteria;
+		m_priorityCriteria = ITpriorityCriteria;
 	}
 
 	/**
