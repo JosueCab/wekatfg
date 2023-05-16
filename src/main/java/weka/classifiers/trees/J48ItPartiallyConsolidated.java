@@ -207,8 +207,6 @@ public class J48ItPartiallyConsolidated
 	 *  (Prefix PCTB added to the option names in order to appear together in the graphical interface)
 	 ********************************************************************************/
 
-	/** Build the tree level by level, rather than in pre-order */
-	protected int m_ITPCTmaximumCriteria = 99999;
 	
 	/** Ways to set the priority criteria option */
 	public static final int Original = 0;
@@ -312,7 +310,7 @@ public class J48ItPartiallyConsolidated
 		// TODO Implement the option reducedErrorPruning of J48
 		C45ItPartiallyConsolidatedPruneableClassifierTree localClassifier =
 				new C45ItPartiallyConsolidatedPruneableClassifierTree(modSelection, baseModelToForceDecision,
-						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length, m_ITPCTmaximumCriteria, m_ITPCTpriorityCriteria);
+						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length, m_ITPCTpriorityCriteria);
 
 		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent);
 
@@ -455,8 +453,7 @@ public class J48ItPartiallyConsolidated
 	 * Options to build the tree partially (the most important change is that it is
 	 * run iteratively (IT) instead of recursively).
 	 * ============================================================================
-	 * -ITPCT-MC <br>
-	 * Build the tree with a maximum number of levels or nodes.
+	 * 
 	 * -ITPCT-P <br>
 	 * Build the tree ordered by a criteria.
 	 * <p>
@@ -466,13 +463,7 @@ public class J48ItPartiallyConsolidated
 	 */
 	@Override
 	public void setOptions(String[] options) throws Exception {
-		String m_ITPCTmaximumCriteriaString = Utils.getOption("ITPCT-MC", options);
 
-		if (m_ITPCTmaximumCriteriaString.length() != 0) {
-			m_ITPCTmaximumCriteria = Integer.parseInt(m_ITPCTmaximumCriteriaString);
-		} else {
-			m_ITPCTmaximumCriteria = 0;
-		}
 		if (Utils.getFlag("ITPCT-PO", options))
 			setITPCTpriorityCriteria(new SelectedTag(Original, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
 		else if (Utils.getFlag("ITPCT-PL", options))
@@ -499,9 +490,6 @@ public class J48ItPartiallyConsolidated
 
 		Vector<String> options = new Vector<String>();
 		Collections.addAll(options, super.getOptions());
-
-		options.add("-ITPCT-MC");
-	    options.add("" + m_ITPCTmaximumCriteria);
 	    
 	    if (m_ITPCTpriorityCriteria == 0) options.add("-ITPCT-PO");
 	    else if (m_ITPCTpriorityCriteria == 1) options.add("-ITPCT-PL");
@@ -513,33 +501,6 @@ public class J48ItPartiallyConsolidated
 		return options.toArray(new String[0]);
 	}
 
-	/**
-	 * Returns the tip text for this property
-	 * 
-	 * @return tip text for this property suitable for displaying in the
-	 *         explorer/experimenter gui
-	 */
-	public String ITPCTmaximumCriteriaTipText() {
-		return "Build the tree with a maximum number of levels, if it is 0 the default levels are built";
-	}
-
-	/**
-	 * Get the value of ITPCTmaximumCriteria.
-	 * 
-	 * @return Value of ITPCTmaximumCriteria.
-	 */
-	public int getITPCTmaximumCriteria() {
-		return m_ITPCTmaximumCriteria;
-	}
-
-	/**
-	 * Set the value of ITPCTmaximumCriteria.
-	 * 
-	 * @param v Value to assign to ITPCTmaximumCriteria.
-	 */
-	public void setITPCTmaximumCriteria(int ITPCTmaximumCriteria) {
-		this.m_ITPCTmaximumCriteria = ITPCTmaximumCriteria;
-	}
 
 	/**
 	 * Returns the tip text for this property

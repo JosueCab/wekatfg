@@ -380,7 +380,7 @@ public class C45PartiallyConsolidatedPruneableClassifierTree extends
 	 *  maintaining the consolidated tree structure
 	 * @throws Exception if something goes wrong
 	 */
-	private void applyBagging() throws Exception {
+	protected void applyBagging() throws Exception {
 		/** Number of Samples. */
 		int numberSamples = m_sampleTreeVector.length;
 		for (int iSample = 0; iSample < numberSamples; iSample++)
