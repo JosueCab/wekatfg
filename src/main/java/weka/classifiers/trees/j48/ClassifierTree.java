@@ -481,7 +481,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 
 		return no;
 	}
-
+	
 	/**
 	 * Returns number of levels in tree structure.
 	 * 

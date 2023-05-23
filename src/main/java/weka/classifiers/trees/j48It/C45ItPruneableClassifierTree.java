@@ -20,7 +20,7 @@ import weka.core.Utils;
  * @author Jes&uacute;s M. P&eacute;rez (txus.perez@ehu.eus)
  * @version $Revision: 1.2 $
  */
-public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
+public class C45ItPruneableClassifierTree extends C45PruneableClassifierTree {
 
 	/** for serialization */
 	private static final long serialVersionUID = 2660972525647728377L;
@@ -52,7 +52,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 	 * @param ITpriorityCriteria 	criteria to build the tree
 	 * @throws Exception if something goes wrong
 	 */
-	public C45PruneableClassifierTreeIt(ModelSelection toSelectLocModel, boolean pruneTree, float cf, boolean raiseTree,
+	public C45ItPruneableClassifierTree(ModelSelection toSelectLocModel, boolean pruneTree, float cf, boolean raiseTree,
 			boolean cleanup, boolean collapseTree, int ITmaximumCriteria, int ITpriorityCriteria) throws Exception {
 		super(toSelectLocModel, pruneTree, cf, raiseTree, cleanup, collapseTree);
 		m_maximumCriteria = ITmaximumCriteria;
@@ -90,7 +90,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 			list.remove(0);
 
 			Instances currentData = (Instances) current[0];
-			C45PruneableClassifierTreeIt currentTree = (C45PruneableClassifierTreeIt) current[1];
+			C45ItPruneableClassifierTree currentTree = (C45ItPruneableClassifierTree) current[1];
 			currentTree.m_order = index;
 
 			if (keepData) {
@@ -112,7 +112,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 				currentData = null;
 				currentTree.m_sons = new ClassifierTree[currentTree.m_localModel.numSubsets()];
 				for (int i = 0; i < currentTree.m_sons.length; i++) {
-					ClassifierTree newTree = new C45PruneableClassifierTreeIt(currentTree.m_toSelectModel,
+					ClassifierTree newTree = new C45ItPruneableClassifierTree(currentTree.m_toSelectModel,
 							m_pruneTheTree, m_CF, m_subtreeRaising, m_cleanup, m_collapseTheTree, m_maximumCriteria,
 							m_priorityCriteria);
 					
@@ -125,7 +125,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 						addSonOrderedByValue(list, son);
 					} else if (m_priorityCriteria == J48It.Gainratio) // Added by gainratio, largest to smallest
 					{
-						ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt) newTree).m_toSelectModel
+						ClassifierSplitModel sonModel = ((C45ItPruneableClassifierTree) newTree).m_toSelectModel
 								.selectModel(localInstances[i]);
 						if (sonModel.numSubsets() > 1) {
 
@@ -143,7 +143,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 
 						double size = currentTree.m_localModel.distribution().perBag(i);
 						double gainRatio;
-						ClassifierSplitModel sonModel = ((C45PruneableClassifierTreeIt) newTree).m_toSelectModel
+						ClassifierSplitModel sonModel = ((C45ItPruneableClassifierTree) newTree).m_toSelectModel
 								.selectModel(localInstances[i]);
 						if (sonModel.numSubsets() > 1) {
 
@@ -213,7 +213,7 @@ public class C45PruneableClassifierTreeIt extends C45PruneableClassifierTree {
 			text.append(m_localModel.rightSide(i, m_train));
 			if (m_sons[i].isLeaf()) {
 				text.append(": ");
-				text.append("[" + ((C45PruneableClassifierTreeIt) m_sons[i]).m_order + "] ");
+				text.append("[" + ((C45ItPruneableClassifierTree) m_sons[i]).m_order + "] ");
 				text.append(m_localModel.dumpLabel(i, m_train));
 			} else {
 				m_sons[i].dumpTree(depth + 1, text);

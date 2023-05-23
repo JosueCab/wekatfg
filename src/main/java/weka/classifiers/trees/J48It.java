@@ -33,7 +33,7 @@ import weka.classifiers.trees.j48.BinC45ModelSelection;
 import weka.classifiers.trees.j48.C45ModelSelection;
 import weka.classifiers.trees.j48.ModelSelection;
 import weka.classifiers.trees.j48.PruneableClassifierTree;
-import weka.classifiers.trees.j48It.C45PruneableClassifierTreeIt;
+import weka.classifiers.trees.j48It.C45ItPruneableClassifierTree;
 import weka.core.AdditionalMeasureProducer;
 import weka.core.Drawable;
 import weka.core.Instances;
@@ -121,7 +121,7 @@ public class J48It extends J48 implements OptionHandler, Drawable, Matchable, So
 					m_doNotMakeSplitPointActualValue);
 		}
 		if (!m_reducedErrorPruning) {
-			m_root = new C45PruneableClassifierTreeIt(modSelection, !m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup,
+			m_root = new C45ItPruneableClassifierTree(modSelection, !m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup,
 					m_collapseTree, m_ITmaximumCriteria, m_ITpriorityCriteria);
 		} else {
 			m_root = new PruneableClassifierTree(modSelection, !m_unpruned, m_numFolds, !m_noCleanup, m_Seed);

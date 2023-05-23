@@ -5,7 +5,7 @@ package weka.classifiers.trees.j48ItPartiallyConsolidated;
 
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedModelSelection;
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedPruneableClassifierTree;
-import weka.classifiers.trees.j48It.C45PruneableClassifierTreeIt;
+import weka.classifiers.trees.j48It.C45ItPruneableClassifierTree;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45ModelSelectionExtended;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45PartiallyConsolidatedPruneableClassifierTree;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45PruneableClassifierTreeExtended;
@@ -94,52 +94,61 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	 * @param consolidationPercent the value of consolidation percent
 	 * @throws Exception if something goes wrong
 	 */
-	public void buildClassifier(Instances data, Instances[] samplesVector, float consolidationPercent)
-			throws Exception {
+	public void buildClassifier(Instances data, Instances[] samplesVector, float consolidationPercent,
+			int consolidationNumberHowToSet) throws Exception {
+		
+		if (consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Percentage) {
+			buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
 
-		buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
+			if (m_collapseTheTree) {
+				collapse();
+			}
+			if (m_pruneTheTree) {
+				prune();
+			}
+			// leavePartiallyConsolidated(consolidationPercent);
+			if (m_priorityCriteria == J48It.Original) {
 
-		if (m_collapseTheTree) {
-			collapse();
-		}
-		if (m_pruneTheTree) {
-			prune();
-		}
-		// leavePartiallyConsolidated(consolidationPercent);
-		if (m_priorityCriteria == J48It.Original) {
-			
-			leavePartiallyConsolidated(consolidationPercent);
-			
-		} else {
-
-			if (m_priorityCriteria == J48It.Levelbylevel) {
-
-				// Number of levels of the consolidated tree
-				int treeLevels = numLevels();
-
-				// Number of levels of the consolidated tree to leave as consolidated based on
-				// given consolidationPercent
-				int numberLevelsConso = (int) (((treeLevels * consolidationPercent) / 100) + 0.5);
-				m_maximumCriteria = numberLevelsConso;
-				System.out.println(
-						"Number of levels to leave as consolidated: " + numberLevelsConso + " of " + treeLevels);
+				leavePartiallyConsolidated(consolidationPercent);
 
 			} else {
 
-				// Number of internal nodes of the consolidated tree
-				int innerNodes = numNodes() - numLeaves();
+				if (m_priorityCriteria == J48It.Levelbylevel) {
 
-				// Number of nodes of the consolidated tree to leave as consolidated based on
-				// given consolidationPercent
-				int numberNodesConso = (int) (((innerNodes * consolidationPercent) / 100) + 0.5);
-				m_maximumCriteria = numberNodesConso;
-				System.out
-						.println("Number of nodes to leave as consolidated: " + numberNodesConso + " of " + innerNodes);
+					// Number of levels of the consolidated tree
+					int treeLevels = numLevels();
 
+					// Number of levels of the consolidated tree to leave as consolidated based on
+					// given consolidationPercent
+					int numberLevelsConso = (int) (((treeLevels * consolidationPercent) / 100) + 0.5);
+					m_maximumCriteria = numberLevelsConso;
+					System.out.println(
+							"Number of levels to leave as consolidated: " + numberLevelsConso + " of " + treeLevels);
+
+				} else {
+
+					// Number of internal nodes of the consolidated tree
+					int innerNodes = numNodes() - numLeaves();
+
+					// Number of nodes of the consolidated tree to leave as consolidated based on
+					// given consolidationPercent
+					int numberNodesConso = (int) (((innerNodes * consolidationPercent) / 100) + 0.5);
+					m_maximumCriteria = numberNodesConso;
+					System.out.println(
+							"Number of nodes to leave as consolidated: " + numberNodesConso + " of " + innerNodes);
+
+				}
 			}
-			// buildTreeIt
-			buildTreeIt(data, samplesVector, m_subtreeRaising || !m_cleanup);
 		}
+		else //consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Value
+		{
+			m_maximumCriteria = (int) consolidationPercent;
+			System.out.println(
+					"Number of nodes or levels to leave as consolidated: " + m_maximumCriteria);
+		}
+		
+		// buildTreeIt
+		buildTreeIt(data, samplesVector, m_subtreeRaising || !m_cleanup);
 
 		applyBagging();
 
@@ -389,12 +398,17 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 		}
 
 	}
-	/*
-	 * public int maxLevel() { int currentLevel = 0; if (m_sons != null) { for (int
-	 * i = 0; i < m_sons.length; i++) { int sonMaxLevel = m_sons[i].maxLevel();
-	 * currentLevel = Math.max(currentLevel, sonMaxLevel); } currentLevel++; }
-	 * return currentLevel; }
+	/**
+	 * Returns number of levels in tree structure.
 	 * 
-	 */
+	 * @return the number of levels
+	 *//*
+		 * public int numLevels() { if (m_isLeaf) { return 0; } else { int maxLevels =
+		 * -1; for (int i = 0; i < m_sons.length; i++) { int nl =
+		 * ((C45ItPartiallyConsolidatedPruneableClassifierTree) m_sons[i]).numLevels();
+		 * if (nl > maxLevels) { maxLevels = nl;
+		 * 
+		 * } } return 1 + maxLevels; } }
+		 */
 
 }

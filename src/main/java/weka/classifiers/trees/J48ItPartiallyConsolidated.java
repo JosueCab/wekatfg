@@ -230,7 +230,22 @@ public class J48ItPartiallyConsolidated
 	
 	private int m_ITPCTpriorityCriteria = Original;
 	
+	/** Ways to set the consolidationNumber option */
+	public static final int ConsolidationNumber_Value = 1;
+	public static final int ConsolidationNumber_Percentage = 2;
 
+	/** Strings related to the ways to set the numberSamples option */
+	public static final Tag[] TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER = {
+			new Tag(ConsolidationNumber_Value, "using a numeric value"),
+			new Tag(ConsolidationNumber_Percentage, "based on a pertentage value (%)"),
+	};
+		
+	/** Selected way to set the number of samples to be generated; or using a fixed value;
+	 *   or based on a coverage value as a percentage (by default). */
+	private int m_ITPCTconsolidationNumberHowToSet = ConsolidationNumber_Percentage;
+	
+
+	
 	/**
 	 * Returns a string describing the classifier
 	 * @return a description suitable for
@@ -312,7 +327,7 @@ public class J48ItPartiallyConsolidated
 				new C45ItPartiallyConsolidatedPruneableClassifierTree(modSelection, baseModelToForceDecision,
 						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length, m_ITPCTpriorityCriteria);
 
-		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent);
+		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent, m_ITPCTconsolidationNumberHowToSet);
 
 		m_root = localClassifier;
 		m_Classifiers = localClassifier.getSampleTreeVector();
@@ -436,6 +451,9 @@ public class J48ItPartiallyConsolidated
 		newVector.addElement(new Option("\tBuild the tree ordered by size.", "ITPCT-PS", 0, "-ITPCT-PS"));
 		newVector.addElement(new Option("\tBuild the tree ordered by gainratio.", "ITPCT-PG", 0, "-ITPCT-PG"));
 		newVector.addElement(new Option("\tBuild the tree ordered by normalized gainratio.", "ITPCT-PGN", 0, "-ITPCT-PGN"));
+		newVector.addElement(new Option("\tSet the number of nodes or levels to be generated based on a value\\n\" +\n"
+				+ "				\"\\tas a percentage (by default)", "ITPCT-P", 0, "-ITPCT-P"));
+		newVector.addElement(new Option("\tSet the number of nodes or levels to be generated based on a numeric value", "ITPCT-V", 0, "-ITPCT-V"));
 		
 		newVector.addAll(Collections.list(super.listOptions()));
 		return newVector.elements();
@@ -464,6 +482,12 @@ public class J48ItPartiallyConsolidated
 	@Override
 	public void setOptions(String[] options) throws Exception {
 
+		if (Utils.getFlag("ITPCT-P", options))
+			setITPCTconsolidationNumberHowToSet(new SelectedTag(ConsolidationNumber_Percentage, TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER));
+		else if (Utils.getFlag("ITPCT-V", options))
+			setITPCTconsolidationNumberHowToSet(new SelectedTag(ConsolidationNumber_Value, TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER));
+				
+		
 		if (Utils.getFlag("ITPCT-PO", options))
 			setITPCTpriorityCriteria(new SelectedTag(Original, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
 		else if (Utils.getFlag("ITPCT-PL", options))
@@ -497,6 +521,10 @@ public class J48ItPartiallyConsolidated
 	    else if (m_ITPCTpriorityCriteria == 3) options.add("-ITPCT-PS");
 	    else if (m_ITPCTpriorityCriteria == 4) options.add("-ITPCT-PG");
 	    else if (m_ITPCTpriorityCriteria == 5) options.add("-ITPCT-PGR");
+	    
+	    if (m_ITPCTconsolidationNumberHowToSet == ConsolidationNumber_Value) options.add("-ITPCT-V");
+	    else options.add("-ITPCT-P");
+
 	    
 		return options.toArray(new String[0]);
 	}
@@ -541,6 +569,47 @@ public class J48ItPartiallyConsolidated
 		}
 	}
 	
+	/**
+	 * Returns the tip text for this property
+	 * @return tip text for this property suitable for
+	 * displaying in the explorer/experimenter gui
+	 */
+	public String ITPCTconsolidationNumberHowToSetTipText() {
+		return "Way to set the consolidation number to be generated:\n" +
+				" * using a fixed value which directly indicates the number nodes to consolidate\n" +
+				" * based on a value as a percentage (by default)\n";
+	}
+	
+	/**
+	 * Get the value of ITPCTconsolidationNumberHowToSet.
+	 *
+	 * @return Value of ITPCTconsolidationNumberHowToSet.
+	 */
+	public SelectedTag getITPCTconsolidationNumberHowToSet() {
+		return new SelectedTag(m_ITPCTconsolidationNumberHowToSet,
+				TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER);
+	}
+	
+
+	/**
+	 * Set the value of ITPCTconsolidationNumberHowToSet. Values other than
+	 * ConsolidationNumber_Percentage, or ConsolidationNumber_Value will be ignored.
+	 *
+	 * @param newWayToSetNumberSamples the way to set the number of samples to use
+	 * @throws Exception if an option is not supported
+	 */
+	public void setITPCTconsolidationNumberHowToSet(SelectedTag newWayToSetConsolidationNumber) throws Exception {
+		if (newWayToSetConsolidationNumber.getTags() == TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER) 
+		{
+			int newEvWay = newWayToSetConsolidationNumber.getSelectedTag().getID();
+
+			if (newEvWay == ConsolidationNumber_Percentage || newEvWay == ConsolidationNumber_Value)
+				m_ITPCTconsolidationNumberHowToSet = newEvWay;
+			else 
+				throw new IllegalArgumentException("Wrong selection type, value should be: "
+						+ "between 1 and 2");
+		}
+	}
 
 
 }
