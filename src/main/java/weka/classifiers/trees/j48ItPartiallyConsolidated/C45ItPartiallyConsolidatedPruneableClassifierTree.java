@@ -104,8 +104,15 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			System.out.println("it buildClassifer");
 			
 			if (consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Percentage) {
-				buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
-
+				
+				int copyPriorityCriteria = m_priorityCriteria; // keep the priority
+				
+				m_priorityCriteria = J48It.Original; // Change the criteria to ORIGINAL to build the tree without restrictions
+				
+				buildTreeIt(data, samplesVector, m_subtreeRaising || !m_cleanup); // build the tree without restrictions
+				
+				m_priorityCriteria = copyPriorityCriteria; //After building the tree return to the criteria that was at the beginning
+				
 				if (m_collapseTheTree) {
 					collapse();
 				}
@@ -402,13 +409,23 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	 * Returns number of levels in tree structure.
 	 * 
 	 * @return the number of levels
-	 *//*
-		 * public int numLevels() { if (m_isLeaf) { return 0; } else { int maxLevels =
-		 * -1; for (int i = 0; i < m_sons.length; i++) { int nl =
-		 * ((C45ItPartiallyConsolidatedPruneableClassifierTree) m_sons[i]).numLevels();
-		 * if (nl > maxLevels) { maxLevels = nl;
-		 * 
-		 * } } return 1 + maxLevels; } }
-		 */
+	 */
+
+	public int numLevels() {
+		if (m_isLeaf) {
+			return 0;
+		} else {
+			int maxLevels = -1;
+			for (int i = 0; i < m_sons.length; i++) {
+				int nl = m_sons[i].numLeaves();
+				if (nl > maxLevels) {
+					maxLevels = nl;
+
+				}
+			}
+			return 1 + maxLevels;
+		}
+	}
+	
 
 }

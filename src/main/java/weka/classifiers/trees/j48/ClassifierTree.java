@@ -482,26 +482,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 		return no;
 	}
 	
-	/**
-	 * Returns number of levels in tree structure.
-	 * 
-	 * @return the number of levels
-	 */
-	public int numLevels() {
-		if (m_isLeaf) {
-			return 0;
-		} else {
-			int maxLevels = -1;
-			for (int i = 0; i < m_sons.length; i++) {
-				int nl = m_sons[i].numLevels();
-				if (nl > maxLevels) {
-					maxLevels = nl;
 
-				}
-			}
-			return 1 + maxLevels;
-		}
-	}
 
 	/**
 	 * Prints tree structure.

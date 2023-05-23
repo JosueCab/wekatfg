@@ -5,6 +5,7 @@ package weka.classifiers.trees.j48PartiallyConsolidated;
 
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedModelSelection;
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedPruneableClassifierTree;
+import weka.classifiers.trees.j48ItPartiallyConsolidated.C45ItPartiallyConsolidatedPruneableClassifierTree;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -386,4 +387,5 @@ public class C45PartiallyConsolidatedPruneableClassifierTree extends
 		for (int iSample = 0; iSample < numberSamples; iSample++)
 			m_sampleTreeVector[iSample].rebuildTreeFromConsolidatedStructure();
 	}
+	
 }
