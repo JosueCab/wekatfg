@@ -96,64 +96,76 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	 */
 	public void buildClassifier(Instances data, Instances[] samplesVector, float consolidationPercent,
 			int consolidationNumberHowToSet) throws Exception {
-		
-		if (consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Percentage) {
-			buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
 
-			if (m_collapseTheTree) {
-				collapse();
-			}
-			if (m_pruneTheTree) {
-				prune();
-			}
-			// leavePartiallyConsolidated(consolidationPercent);
-			if (m_priorityCriteria == J48It.Original) {
+		if (m_priorityCriteria == J48It.Original) {
 
-				leavePartiallyConsolidated(consolidationPercent);
+			super.buildClassifier(data, samplesVector, consolidationPercent);
 
-			} else {
+		} else {
+			System.out.println("Iterative buildClassifier");
+			if (consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Percentage) {
+				buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
 
-				if (m_priorityCriteria == J48It.Levelbylevel) {
+				if (m_collapseTheTree) {
+					collapse();
+				}
+				if (m_pruneTheTree) {
+					prune();
+				}
+				// leavePartiallyConsolidated(consolidationPercent);
+				if (m_priorityCriteria == J48It.Original) {
 
-					// Number of levels of the consolidated tree
-					int treeLevels = numLevels();
-
-					// Number of levels of the consolidated tree to leave as consolidated based on
-					// given consolidationPercent
-					int numberLevelsConso = (int) (((treeLevels * consolidationPercent) / 100) + 0.5);
-					m_maximumCriteria = numberLevelsConso;
-					System.out.println(
-							"Number of levels to leave as consolidated: " + numberLevelsConso + " of " + treeLevels);
+					leavePartiallyConsolidated(consolidationPercent);
 
 				} else {
 
-					// Number of internal nodes of the consolidated tree
-					int innerNodes = numNodes() - numLeaves();
+					if (m_priorityCriteria == J48It.Levelbylevel) {
 
-					// Number of nodes of the consolidated tree to leave as consolidated based on
-					// given consolidationPercent
-					int numberNodesConso = (int) (((innerNodes * consolidationPercent) / 100) + 0.5);
-					m_maximumCriteria = numberNodesConso;
-					System.out.println(
-							"Number of nodes to leave as consolidated: " + numberNodesConso + " of " + innerNodes);
+						// Number of levels of the consolidated tree
+						int treeLevels = numLevels();
 
+						// Number of levels of the consolidated tree to leave as consolidated based on
+						// given consolidationPercent
+						int numberLevelsConso = (int) (((treeLevels * consolidationPercent) / 100) + 0.5);
+						m_maximumCriteria = numberLevelsConso;
+						System.out.println("Number of levels to leave as consolidated: " + numberLevelsConso + " of "
+								+ treeLevels);
+
+					} else {
+
+						// Number of internal nodes of the consolidated tree
+						int innerNodes = numNodes() - numLeaves();
+
+						// Number of nodes of the consolidated tree to leave as consolidated based on
+						// given consolidationPercent
+						int numberNodesConso = (int) (((innerNodes * consolidationPercent) / 100) + 0.5);
+						m_maximumCriteria = numberNodesConso;
+						System.out.println(
+								"Number of nodes to leave as consolidated: " + numberNodesConso + " of " + innerNodes);
+
+					}
 				}
+			} else // consolidationNumberHowToSet ==
+					// J48ItPartiallyConsolidated.ConsolidationNumber_Value
+			{
+				if (m_collapseTheTree) {
+					collapse();
+				}
+				if (m_pruneTheTree) {
+					prune();
+				}
+				m_maximumCriteria = (int) consolidationPercent;
+				System.out.println("Number of nodes or levels to leave as consolidated: " + m_maximumCriteria);
 			}
-		}
-		else //consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Value
-		{
-			m_maximumCriteria = (int) consolidationPercent;
-			System.out.println(
-					"Number of nodes or levels to leave as consolidated: " + m_maximumCriteria);
-		}
-		
-		// buildTreeIt
-		buildTreeIt(data, samplesVector, m_subtreeRaising || !m_cleanup);
 
-		applyBagging();
+			// buildTreeIt
+			buildTreeIt(data, samplesVector, m_subtreeRaising || !m_cleanup);
 
-		if (m_cleanup)
-			cleanup(new Instances(data, 0));
+			applyBagging();
+
+			if (m_cleanup)
+				cleanup(new Instances(data, 0));
+		}
 	}
 
 	/**
