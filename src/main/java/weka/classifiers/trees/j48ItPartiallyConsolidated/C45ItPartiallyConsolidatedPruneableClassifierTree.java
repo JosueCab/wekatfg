@@ -104,15 +104,11 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			System.out.println("it buildClassifer");
 			
 			if (consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Percentage) {
-				
-				int copyPriorityCriteria = m_priorityCriteria; // keep the priority
-				
+								
 				m_priorityCriteria = J48It.Original; // Change the criteria to ORIGINAL to build the tree without restrictions
 				
-				buildTreeIt(data, samplesVector, m_subtreeRaising || !m_cleanup); // build the tree without restrictions
-				
-				m_priorityCriteria = copyPriorityCriteria; //After building the tree return to the criteria that was at the beginning
-				
+				super.buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup); // build the tree without restrictions
+								
 				if (m_collapseTheTree) {
 					collapse();
 				}
@@ -153,8 +149,8 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 				System.out.println("Number of nodes or levels to leave as consolidated: " + m_maximumCriteria);
 			}
 
-			// buildTreeIt
-			buildTreeIt(data, samplesVector, m_subtreeRaising || !m_cleanup);
+			// buildTree
+			buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
 
 			applyBagging();
 
@@ -172,7 +168,7 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	 * @param keepData      is training data to be kept?
 	 * @throws Exception if something goes wrong
 	 */
-	public void buildTreeIt(Instances data, Instances[] samplesVector, boolean keepData) throws Exception {
+	public void buildTree(Instances data, Instances[] samplesVector, boolean keepData) throws Exception {
 
 		ArrayList<Object[]> list = new ArrayList<>();
 
@@ -405,27 +401,7 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 		}
 
 	}
-	/**
-	 * Returns number of levels in tree structure.
-	 * 
-	 * @return the number of levels
-	 */
 
-	public int numLevels() {
-		if (m_isLeaf) {
-			return 0;
-		} else {
-			int maxLevels = -1;
-			for (int i = 0; i < m_sons.length; i++) {
-				int nl = m_sons[i].numLeaves();
-				if (nl > maxLevels) {
-					maxLevels = nl;
-
-				}
-			}
-			return 1 + maxLevels;
-		}
-	}
 	
 
 }
