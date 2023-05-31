@@ -99,6 +99,7 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 		if (m_priorityCriteria == J48It.Original) {
 
 			super.buildClassifier(data, samplesVector, consolidationPercent);
+
 		} else {
 			
 			System.out.println("it buildClassifer");
