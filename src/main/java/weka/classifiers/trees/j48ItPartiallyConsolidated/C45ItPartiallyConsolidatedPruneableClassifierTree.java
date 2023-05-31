@@ -105,8 +105,7 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			
 			if (consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Percentage) {
 								
-				m_priorityCriteria = J48It.Original; // Change the criteria to ORIGINAL to build the tree without restrictions
-				
+			
 				super.buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup); // build the tree without restrictions
 								
 				if (m_collapseTheTree) {
