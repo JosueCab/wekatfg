@@ -5,6 +5,7 @@ package weka.classifiers.trees.j48PartiallyConsolidated;
 
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedModelSelection;
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedPruneableClassifierTree;
+import weka.classifiers.trees.j48ItPartiallyConsolidated.C45ItPartiallyConsolidatedPruneableClassifierTree;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -380,10 +381,32 @@ public class C45PartiallyConsolidatedPruneableClassifierTree extends
 	 *  maintaining the consolidated tree structure
 	 * @throws Exception if something goes wrong
 	 */
-	private void applyBagging() throws Exception {
+	protected void applyBagging() throws Exception {
 		/** Number of Samples. */
 		int numberSamples = m_sampleTreeVector.length;
 		for (int iSample = 0; iSample < numberSamples; iSample++)
 			m_sampleTreeVector[iSample].rebuildTreeFromConsolidatedStructure();
+	}
+	
+	/**
+	 * Returns number of levels in tree structure.
+	 * 
+	 * @return the number of levels
+	 */
+
+	public int numLevels() {
+		if (m_isLeaf) {
+			return 0;
+		} else {
+			int maxLevels = -1;
+			for (int i = 0; i < m_sons.length; i++) {
+				int nl = m_sons[i].numLeaves();
+				if (nl > maxLevels) {
+					maxLevels = nl;
+
+				}
+			}
+			return 1 + maxLevels;
+		}
 	}
 }
