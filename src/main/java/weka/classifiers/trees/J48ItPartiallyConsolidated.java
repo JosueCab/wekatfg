@@ -568,6 +568,14 @@ public class J48ItPartiallyConsolidated
 						+ "between 0 and 5");
 		}
 	}
+	/**
+	 * Returns the tip text for this property
+	 * @return tip text for this property suitable for
+	 * displaying in the explorer/experimenter gui
+	 */
+	public String PCTBconsolidationPercentTipText() {
+		return "Consolidation percent or number for use after the consolidation process";
+	}
 	
 	/**
 	 * Returns the tip text for this property
