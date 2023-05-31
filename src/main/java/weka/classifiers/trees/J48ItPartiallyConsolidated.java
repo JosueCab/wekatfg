@@ -574,6 +574,7 @@ public class J48ItPartiallyConsolidated
 	 * displaying in the explorer/experimenter gui
 	 */
 	public String PCTBconsolidationPercentTipText() {
+		
 		return "Consolidation percent or number for use after the consolidation process";
 	}
 	
