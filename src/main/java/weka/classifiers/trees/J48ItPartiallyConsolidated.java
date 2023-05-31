@@ -242,7 +242,7 @@ public class J48ItPartiallyConsolidated
 		
 	/** Selected way to set the number of samples to be generated; or using a fixed value;
 	 *   or based on a coverage value as a percentage (by default). */
-	private int m_ITPCTconsolidationNumberHowToSet = ConsolidationNumber_Percentage;
+	private int m_ITPCTconsolidationPercentHowToSet = ConsolidationNumber_Percentage;
 	
 
 	
@@ -327,7 +327,7 @@ public class J48ItPartiallyConsolidated
 				new C45ItPartiallyConsolidatedPruneableClassifierTree(modSelection, baseModelToForceDecision,
 						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length, m_ITPCTpriorityCriteria);
 
-		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent, m_ITPCTconsolidationNumberHowToSet);
+		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent, m_ITPCTconsolidationPercentHowToSet);
 
 		m_root = localClassifier;
 		m_Classifiers = localClassifier.getSampleTreeVector();
@@ -483,9 +483,9 @@ public class J48ItPartiallyConsolidated
 	public void setOptions(String[] options) throws Exception {
 
 		if (Utils.getFlag("ITPCT-P", options))
-			setITPCTconsolidationNumberHowToSet(new SelectedTag(ConsolidationNumber_Percentage, TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER));
+			setITPCTconsolidationPercentHowToSet(new SelectedTag(ConsolidationNumber_Percentage, TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER));
 		else if (Utils.getFlag("ITPCT-V", options))
-			setITPCTconsolidationNumberHowToSet(new SelectedTag(ConsolidationNumber_Value, TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER));
+			setITPCTconsolidationPercentHowToSet(new SelectedTag(ConsolidationNumber_Value, TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER));
 				
 		
 		if (Utils.getFlag("ITPCT-PO", options))
@@ -522,7 +522,7 @@ public class J48ItPartiallyConsolidated
 	    else if (m_ITPCTpriorityCriteria == 4) options.add("-ITPCT-PG");
 	    else if (m_ITPCTpriorityCriteria == 5) options.add("-ITPCT-PGR");
 	    
-	    if (m_ITPCTconsolidationNumberHowToSet == ConsolidationNumber_Value) options.add("-ITPCT-V");
+	    if (m_ITPCTconsolidationPercentHowToSet == ConsolidationNumber_Value) options.add("-ITPCT-V");
 	    else options.add("-ITPCT-P");
 
 	    
@@ -574,37 +574,37 @@ public class J48ItPartiallyConsolidated
 	 * @return tip text for this property suitable for
 	 * displaying in the explorer/experimenter gui
 	 */
-	public String ITPCTconsolidationNumberHowToSetTipText() {
+	public String ITPCTconsolidationPercentHowToSetTipText() {
 		return "Way to set the consolidation number to be generated:\n" +
 				" * using a fixed value which directly indicates the number nodes to consolidate\n" +
 				" * based on a value as a percentage (by default)\n";
 	}
 	
 	/**
-	 * Get the value of ITPCTconsolidationNumberHowToSet.
+	 * Get the value of ITPCTconsolidationPercentHowToSet.
 	 *
-	 * @return Value of ITPCTconsolidationNumberHowToSet.
+	 * @return Value of ITPCTconsolidationPercentHowToSet.
 	 */
-	public SelectedTag getITPCTconsolidationNumberHowToSet() {
-		return new SelectedTag(m_ITPCTconsolidationNumberHowToSet,
+	public SelectedTag getITPCTconsolidationPercentHowToSet() {
+		return new SelectedTag(m_ITPCTconsolidationPercentHowToSet,
 				TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER);
 	}
 	
 
 	/**
-	 * Set the value of ITPCTconsolidationNumberHowToSet. Values other than
+	 * Set the value of ITPCTconsolidationPercentHowToSet. Values other than
 	 * ConsolidationNumber_Percentage, or ConsolidationNumber_Value will be ignored.
 	 *
 	 * @param newWayToSetNumberSamples the way to set the number of samples to use
 	 * @throws Exception if an option is not supported
 	 */
-	public void setITPCTconsolidationNumberHowToSet(SelectedTag newWayToSetConsolidationNumber) throws Exception {
+	public void setITPCTconsolidationPercentHowToSet(SelectedTag newWayToSetConsolidationNumber) throws Exception {
 		if (newWayToSetConsolidationNumber.getTags() == TAGS_WAYS_TO_SET_CONSOLIDATION_NUMBER) 
 		{
 			int newEvWay = newWayToSetConsolidationNumber.getSelectedTag().getID();
 
 			if (newEvWay == ConsolidationNumber_Percentage || newEvWay == ConsolidationNumber_Value)
-				m_ITPCTconsolidationNumberHowToSet = newEvWay;
+				m_ITPCTconsolidationPercentHowToSet = newEvWay;
 			else 
 				throw new IllegalArgumentException("Wrong selection type, value should be: "
 						+ "between 1 and 2");
