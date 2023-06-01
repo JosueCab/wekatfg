@@ -219,7 +219,7 @@ public class J48ItPartiallyConsolidated
 	
 	/** Strings related to the ways to set the priority criteria option */
 	public static final Tag[] TAGS_WAYS_TO_SET_PRIORITY_CRITERIA = {
-			new Tag(Original, "Original - Without maximums"),
+			new Tag(Original, "Original (recursive)"),
 			new Tag(Levelbylevel, "Level by level"),
 			new Tag(Preorder, "Node by node - Preorder"),
 			new Tag(Size, "Node by node - Size"),
@@ -537,7 +537,7 @@ public class J48ItPartiallyConsolidated
 	 *         explorer/experimenter gui
 	 */
 	public String ITPCTpriorityCriteriaTipText() {
-		return "Build the tree ordered by a criteria: Original (without maximums), LevelByLevel, Preorder, Size, Gainratio, Normalized Gainratio";
+		return "Build the tree ordered by a criteria: Original (recursive), LevelByLevel, Preorder, Size, Gainratio, Normalized Gainratio";
 	}
 
 	/**
