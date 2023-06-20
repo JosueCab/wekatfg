@@ -400,7 +400,7 @@ public class C45PartiallyConsolidatedPruneableClassifierTree extends
 		} else {
 			int maxLevels = -1;
 			for (int i = 0; i < m_sons.length; i++) {
-				int nl = m_sons[i].numLeaves();
+				int nl = ((C45PartiallyConsolidatedPruneableClassifierTree) m_sons[i]).numLevels();
 				if (nl > maxLevels) {
 					maxLevels = nl;
 
