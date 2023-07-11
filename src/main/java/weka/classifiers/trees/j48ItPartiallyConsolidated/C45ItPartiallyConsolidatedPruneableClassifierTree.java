@@ -151,7 +151,12 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 
 			// buildTree
 			buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
-
+			if (m_collapseTheTree) {
+				collapse();
+			}
+			if (m_pruneTheTree) {
+				prune();
+			}
 			applyBagging();
 
 			if (m_cleanup)
