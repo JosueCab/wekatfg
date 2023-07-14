@@ -148,12 +148,12 @@ public class C45ItPruneableClassifierTree extends C45PruneableClassifierTree {
 						if (sonModel.numSubsets() > 1) {
 
 							gainRatio = ((C45Split) sonModel).gainRatio();
+							orderValue = size * gainRatio;
 
 						} else {
 
-							gainRatio = (double) Double.MIN_VALUE;
+							orderValue = (double) Double.MIN_VALUE;
 						}
-						orderValue = size * gainRatio;
 						Object[] son = new Object[] { localInstances[i], newTree, orderValue, currentLevel + 1 };
 						addSonOrderedByValue(list, son);
 

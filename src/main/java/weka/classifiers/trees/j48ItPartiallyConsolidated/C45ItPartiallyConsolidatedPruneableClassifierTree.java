@@ -327,12 +327,12 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 						if (sonModel.numSubsets() > 1) {
 
 							gainRatio = ((C45Split) sonModel).gainRatio();
+							orderValue = size * gainRatio;
 
 						} else {
 
-							gainRatio = (double) Double.MIN_VALUE;
+							orderValue = (double) Double.MIN_VALUE;
 						}
-						orderValue = size * gainRatio;
 						Object[] son = new Object[] { localInstances[iSon], localSamplesVector, newTree, orderValue,
 								currentLevel + 1 };
 						addSonOrderedByValue(list, son);
