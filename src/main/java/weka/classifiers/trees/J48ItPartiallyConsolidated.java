@@ -498,7 +498,7 @@ public class J48ItPartiallyConsolidated
 			setITPCTpriorityCriteria(new SelectedTag(Size, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
 		else if (Utils.getFlag("ITPCT-PG", options))
 			setITPCTpriorityCriteria(new SelectedTag(Gainratio, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
-		else if (Utils.getFlag("ITPCT-PGR", options))
+		else if (Utils.getFlag("ITPCT-PGN", options))
 			setITPCTpriorityCriteria(new SelectedTag(Gainratio_normalized, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
 		
 		super.setOptions(options);
@@ -520,7 +520,7 @@ public class J48ItPartiallyConsolidated
 	    else if (m_ITPCTpriorityCriteria == 2) options.add("-ITPCT-PP");
 	    else if (m_ITPCTpriorityCriteria == 3) options.add("-ITPCT-PS");
 	    else if (m_ITPCTpriorityCriteria == 4) options.add("-ITPCT-PG");
-	    else if (m_ITPCTpriorityCriteria == 5) options.add("-ITPCT-PGR");
+	    else if (m_ITPCTpriorityCriteria == 5) options.add("-ITPCT-PGN");
 	    
 	    if (m_ITPCTconsolidationPercentHowToSet == ConsolidationNumber_Value) options.add("-ITPCT-V");
 	    else options.add("-ITPCT-P");
