@@ -31,15 +31,12 @@ import java.util.Vector;
 
 import weka.classifiers.Sourcable;
 import weka.classifiers.trees.j48.C45ModelSelection;
-import weka.classifiers.trees.j48.ClassifierTree;
 import weka.classifiers.trees.j48.ModelSelection;
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedModelSelection;
 import weka.classifiers.trees.j48ItPartiallyConsolidated.C45ItPartiallyConsolidatedPruneableClassifierTree;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45ModelSelectionExtended;
-import weka.classifiers.trees.j48PartiallyConsolidated.C45PartiallyConsolidatedPruneableClassifierTree;
 import weka.core.AdditionalMeasureProducer;
 import weka.core.Drawable;
-import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.Matchable;
 import weka.core.Option;
