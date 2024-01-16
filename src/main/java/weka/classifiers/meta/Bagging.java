@@ -180,6 +180,10 @@ public class Bagging
 
   /** Reference to the training data */
   protected Instances m_data;
+  
+  /** Whether to classify using the Majority Voting combination rule. Can
+   * assume that class is nominal. */
+  private boolean m_MajorityVotingRule = false;
 
   /**
    * Constructor.
@@ -264,6 +268,9 @@ public class Bagging
               "represent-copies-using-weights", 0, "-represent-copies-using-weights"));
     newVector.addElement(new Option(
               "\tPrint the individual classifiers in the output", "print", 0, "-print"));
+    newVector.addElement(new Option(
+            "\tClassify using the Majority Voting combination rule",
+            "V", 0, "-V"));
 
     newVector.addAll(Collections.list(super.listOptions()));
  
@@ -345,6 +352,9 @@ public class Bagging
    * <pre> -R
    *  Spread initial count over all class values (i.e. don't use 1 per value)</pre>
    *
+   * <pre> -V
+   *  Classify using the Majority Voting combination rule.</pre>
+   *
    <!-- options-end -->
    *
    * Options after -- are passed to the designated classifier.<p>
@@ -371,6 +381,8 @@ public class Bagging
     setRepresentCopiesUsingWeights(Utils.getFlag("represent-copies-using-weights", options));
 
     setPrintClassifiers(Utils.getFlag("print", options));
+    
+    setMajorityVotingRule(Utils.getFlag('V', options));
 
     super.setOptions(options);
   }
@@ -406,6 +418,10 @@ public class Bagging
 
     if (getPrintClassifiers()) {
       options.add("-print");
+    }
+
+    if (getMajorityVotingRule()) { 
+        options.add("-V");
     }
 
     Collections.addAll(options, super.getOptions());
@@ -528,6 +544,36 @@ public class Bagging
 
     return m_CalcOutOfBag;
   }
+  
+  /**
+   * Returns the tip text for this property
+   * @return tip text for this property suitable for
+   * displaying in the explorer/experimenter gui
+   */
+  public String majorityVotingRuleTipText() {
+    return "Whether to classify using the Majority Voting combination rule is used.";
+  }
+
+  /**
+   * Set whether to classify using the Majority Voting combination rule. 
+   *
+   * @param majorityVotingRule whether to classify using the Majority Voting combination rule
+   */
+  public void setMajorityVotingRule(boolean majorityVotingRule) {
+
+    m_MajorityVotingRule = majorityVotingRule;
+  }
+
+  /**
+   * Get whether to classify using the Majority Voting combination rule is used.
+   *
+   * @return whether to classify using the Majority Voting combination rule is used
+   */
+  public boolean getMajorityVotingRule() {
+
+    return m_MajorityVotingRule;
+  }
+  
   /**
    * Returns the tip text for this property
    * @return tip text for this property suitable for
@@ -786,9 +832,17 @@ public class Bagging
           numPreds++;
         }
       } else {
-        newProbs = m_Classifiers[i].distributionForInstance(instance);
-        for (int j = 0; j < newProbs.length; j++)
-          sums[j] += newProbs[j];
+    	  if (m_MajorityVotingRule) {
+    		  double pred = m_Classifiers[i].classifyInstance(instance);
+    		  if (!Utils.isMissingValue(pred)) {
+    			  sums[(int)pred]++;
+    			  numPreds++;
+    		  }
+    	  } else {
+    		  newProbs = m_Classifiers[i].distributionForInstance(instance);
+    		  for (int j = 0; j < newProbs.length; j++)
+    			  sums[j] += newProbs[j];
+    	  }
       }
     }
     if (m_Numeric) {
@@ -798,11 +852,21 @@ public class Bagging
         sums[0] /= numPreds;
       }
       return sums;
-    } else if (Utils.eq(Utils.sum(sums), 0)) {
-      return sums;
+    } else if (m_MajorityVotingRule) {
+		int mostVotedClass = Utils.maxIndex(sums);
+	    // set probs to 0
+		newProbs = new double[instance.numClasses()];
+
+		newProbs[mostVotedClass] = 1; // the class that have been voted the most
+	                              // receives 1
+	    return newProbs;
     } else {
-      Utils.normalize(sums);
-      return sums;
+        if (Utils.eq(Utils.sum(sums), 0)) {
+            return sums;
+          } else {
+            Utils.normalize(sums);
+            return sums;
+          }
     }
   }
 
