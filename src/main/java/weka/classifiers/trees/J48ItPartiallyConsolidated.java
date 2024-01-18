@@ -512,16 +512,22 @@ public class J48ItPartiallyConsolidated
 		Vector<String> options = new Vector<String>();
 		Collections.addAll(options, super.getOptions());
 	    
-	    if (m_ITPCTpriorityCriteria == 0) options.add("-ITPCT-PO");
-	    else if (m_ITPCTpriorityCriteria == 1) options.add("-ITPCT-PL");
-	    else if (m_ITPCTpriorityCriteria == 2) options.add("-ITPCT-PP");
-	    else if (m_ITPCTpriorityCriteria == 3) options.add("-ITPCT-PS");
-	    else if (m_ITPCTpriorityCriteria == 4) options.add("-ITPCT-PG");
-	    else if (m_ITPCTpriorityCriteria == 5) options.add("-ITPCT-PGN");
-	    
+		switch(m_ITPCTpriorityCriteria) {
+			case Original:
+				options.add("-ITPCT-PO");break;
+			case Levelbylevel:
+				options.add("-ITPCT-PL");break;
+			case Preorder:
+				options.add("-ITPCT-PP");break;
+			case Size:
+				options.add("-ITPCT-PS");break;
+			case Gainratio:
+				options.add("-ITPCT-PG");break;
+			case Gainratio_normalized:
+				options.add("-ITPCT-PGN");break;
+		}
 	    if (m_ITPCTconsolidationPercentHowToSet == ConsolidationNumber_Value) options.add("-ITPCT-V");
 	    else options.add("-ITPCT-P");
-
 	    
 		return options.toArray(new String[0]);
 	}
