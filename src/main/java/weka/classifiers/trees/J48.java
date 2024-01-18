@@ -875,7 +875,7 @@ public class J48 extends AbstractClassifier implements OptionHandler, Drawable,
    */
   @Override
   public Enumeration<String> enumerateMeasures() {
-    Vector<String> newVector = new Vector<String>(5);
+    Vector<String> newVector = new Vector<String>(6);
     newVector.addElement("measureTreeSize");
     newVector.addElement("measureNumLeaves");
     newVector.addElement("measureNumRules");
