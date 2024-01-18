@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Stack;
 
+import weka.core.AdditionalMeasureProducer;
 import weka.core.Capabilities;
 import weka.core.CapabilitiesHandler;
 import weka.core.Drawable;
@@ -540,6 +541,10 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 			}
 			text.append("\n\nNumber of Leaves  : \t" + numLeaves() + "\n");
 			text.append("\nSize of the tree : \t" + numNodes() + "\n");
+	        text.append("\nAverage length of branches : \t" + 
+	        		Utils.roundDouble(averageBranchesLength(false),2) + "\n");
+	        text.append("\nAverage length of Branches weighted by leaves size : \t" + 
+	        		Utils.roundDouble(averageBranchesLength(true),2) + "\n");
 
 			return text.toString();
 		} catch (Exception e) {

@@ -901,7 +901,7 @@ public class J48 extends AbstractClassifier implements OptionHandler, Drawable,
     } else if (additionalMeasureName.compareToIgnoreCase("measureNumLeaves") == 0) {
       return measureNumLeaves();
     } else if (additionalMeasureName.compareToIgnoreCase("measureNumInnerNodes") == 0) {
-        return measureNumLeaves();
+        return measureNumInnerNodes();
     } else if (additionalMeasureName.compareToIgnoreCase("measureExplanationLength") == 0) {
         return measureExplanationLength();
     } else if (additionalMeasureName.compareToIgnoreCase("measureWeightedExplanationLength") == 0) {
