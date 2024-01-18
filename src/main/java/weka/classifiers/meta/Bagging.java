@@ -652,8 +652,9 @@ public class Bagging
   }
   
   /**
-   * Returns an enumeration of the additional measure names.
-   *
+   * Returns an enumeration of the additional measure names
+   * (Added also those produced by the base algorithm).
+   * 
    * @return an enumeration of the measure names
    */
   @Override
@@ -661,11 +662,16 @@ public class Bagging
     
     Vector<String> newVector = new Vector<String>(1);
     newVector.addElement("measureOutOfBagError");
+    if (m_Classifier instanceof AdditionalMeasureProducer)
+    	newVector.addAll(Collections.list(((AdditionalMeasureProducer)m_Classifier).enumerateMeasures()));
     return newVector.elements();
   }
   
   /**
    * Returns the value of the named measure.
+   * In the case of measureTreeSize, measureNumLeaves, measureNumRules,
+   * measureExplanationLength and measureWeightedExplanationLength it returns
+   * the sum of the named measure of all the base classifiers. 
    *
    * @param additionalMeasureName the name of the measure to query for its value
    * @return the value of the named measure
@@ -673,13 +679,46 @@ public class Bagging
    */
   @Override
   public double getMeasure(String additionalMeasureName) {
-    
-    if (additionalMeasureName.equalsIgnoreCase("measureOutOfBagError")) {
-      return measureOutOfBagError();
-    }
-    else {throw new IllegalArgumentException(additionalMeasureName 
-					     + " not supported (Bagging)");
-    }
+
+	  if (additionalMeasureName.equalsIgnoreCase("measureOutOfBagError")) {
+		  return measureOutOfBagError();
+	  } else if (m_Classifier instanceof AdditionalMeasureProducer) {
+		  double res;
+		  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+		  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+		  String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+		  ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+		  
+		  for(String op: metaOperations)
+			  for(String ms: treeMeasures) {
+				  String mtms = "measure" + op + ms;
+				  if (additionalMeasureName.equalsIgnoreCase(mtms)) {
+					  double[] vValues = new double[m_Classifiers.length];
+					  String sms = "measure" + ms;
+					  for(int i = 0; i < m_Classifiers.length; i++)
+						  vValues[i] = ((AdditionalMeasureProducer)(m_Classifiers[i])).getMeasure(sms);
+					  int iop = metaOperations.indexOf(op);
+					  switch (iop) {
+					    case 0:
+					    	res = Utils.mean(vValues); break;
+					    case 1:
+							res = vValues[Utils.minIndex(vValues)]; break;
+					    case 2:
+					    	res = vValues[Utils.maxIndex(vValues)]; break;
+					    case 3:
+					    	res = Utils.sum(vValues); break;
+					    default:
+					    	throw new IllegalArgumentException(additionalMeasureName 
+									  + " not supported (Bagging)");
+					  }
+					  return res;
+				  }
+			  }
+			  throw new IllegalArgumentException(additionalMeasureName 
+					  + " not supported (Bagging)");
+		  }
+		  else throw new IllegalArgumentException(additionalMeasureName 
+				  + " not supported (Bagging)");
   }
 
   /**
@@ -1088,7 +1127,22 @@ public class Bagging
     if (getPrintClassifiers()) {
       text.append("All the base classifiers: \n\n");
       for (int i = 0; i < m_Classifiers.length; i++)
-        text.append(m_Classifiers[i].toString() + "\n\n");
+        text.append(m_Classifiers[i].toString() + "\n");
+
+	  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+	  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+	  String[] stTreeMeasures = new String[]{"NumLeaves", /*"NumRules",*/ "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+	  ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+	  
+	  for(String ms: treeMeasures) {
+	      text.append(ms + ": ");
+		  for(String op: metaOperations) {
+			  String mtms = "measure" + op + ms;
+		      text.append(op + " = " + Utils.roundDouble(getMeasure(mtms),2) + " ");
+		  }
+	      text.append("\n");
+	  }
+      text.append("\n");
     }
     if (m_CalcOutOfBag) {
       text.append(m_OutOfBagEvaluationObject.toSummaryString("\n\n*** Out-of-bag estimates ***\n", getOutputOutOfBagComplexityStatistics()));
