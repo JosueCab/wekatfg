@@ -481,8 +481,45 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 
 		return no;
 	}
-	
 
+	/**
+	 * Returns the average length of all the branches from root to leaf.
+	 * If weighted is true, takes into account the proportion of instances fallen into each leaf
+	 * 
+	 * @return the average length of all the branches
+	 */
+	public double averageBranchesLength(boolean weighted) {
+
+		double rootSize = m_localModel.distribution().total(); 
+		double sum = sumBranchesLength(weighted, 0, (double)0.0, rootSize);
+		if (weighted)
+			return sum;
+		else
+			return sum / numLeaves();
+	}
+
+	/**
+	 * Returns the sum of the length of all the branches from root to leaf.
+	 * If weighted is true, takes into account the proportion of instances fallen into each leaf
+	 * 
+	 * @return the sum of then length of all the branches
+	 */
+	public double sumBranchesLength(boolean weighted, int partialLength, double partialSum, double rootSize) {
+
+		if (m_isLeaf) {
+			if (weighted) {
+				double leafSize = m_localModel.distribution().total(); 
+				return ((leafSize / rootSize) * partialLength) + partialSum;
+			} else
+				return partialLength + partialSum;
+		}
+		else {
+			double previousSum = partialSum;
+			for (int i = 0; i < m_sons.length; i++)
+				previousSum = m_sons[i].sumBranchesLength(weighted, partialLength + 1, previousSum, rootSize);
+			return previousSum;
+		}
+	}
 
 	/**
 	 * Prints tree structure.
