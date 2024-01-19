@@ -68,21 +68,16 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	 * @param ITPCTpriorityCriteria criteria to build the tree
 	 * @throws Exception if something goes wrong
 	 */
-	public C45ItPartiallyConsolidatedPruneableClassifierTree(ModelSelection toSelectLocModel,
-			C45ModelSelectionExtended baseModelToForceDecision, boolean pruneTree, float cf, boolean raiseTree,
-			boolean cleanup, boolean collapseTree, int numberSamples, int ITPCTpriorityCriteria) throws Exception {
+	public C45ItPartiallyConsolidatedPruneableClassifierTree(
+			ModelSelection toSelectLocModel, C45ModelSelectionExtended baseModelToForceDecision,
+			boolean pruneTree, float cf,
+			boolean raiseTree, boolean cleanup, 
+			boolean collapseTree, int numberSamples, int ITPCTpriorityCriteria) throws Exception {
 		super(toSelectLocModel, baseModelToForceDecision, pruneTree, cf, raiseTree, cleanup, collapseTree,
 				numberSamples);
 
 		// Initialize each criteria
 		m_priorityCriteria = ITPCTpriorityCriteria;
-
-		// Initialize each base decision tree of the vector
-		ModelSelection modelToConsolidate = ((C45ConsolidatedModelSelection) toSelectLocModel).getModelToConsolidate();
-		m_sampleTreeVector = new C45PruneableClassifierTreeExtended[numberSamples];
-		for (int iSample = 0; iSample < numberSamples; iSample++)
-			m_sampleTreeVector[iSample] = new C45PruneableClassifierTreeExtended(modelToConsolidate,
-					baseModelToForceDecision, pruneTree, cf, raiseTree, cleanup, collapseTree);
 	}
 
 	/**
@@ -101,9 +96,6 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			super.buildClassifier(data, samplesVector, consolidationPercent);
 
 		} else {
-			
-			System.out.println("it buildClassifer");
-			
 			if (consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Percentage) {
 								
 			
@@ -379,8 +371,6 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			index++;
 
 		}
-		System.out.println("END buildTree");
-
 	}
 
 	public void addSonOrderedByValue(ArrayList<Object[]> list, Object[] son) {
