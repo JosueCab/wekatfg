@@ -25,6 +25,9 @@
 package weka.classifiers.trees;
 
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -223,6 +226,10 @@ public class J48PartiallyConsolidated
 	
 	/** Visualize the base trees: None, only the first ten (if they exist) or all */
 	protected int m_PCTBvisualizeBaseTrees = Visualize_FirstOnes;
+
+	/** Whether to show the explanation measures of the all decision trees
+	 *  that compose the final classifier (MCS). */
+	protected boolean m_PCTBprintExplanationMeasuresMCS = false;
 
 	/** Array for storing the generated base classifiers.
 	 * (based on Bagging.java written by Eibe Frank eta al)
@@ -496,9 +503,15 @@ public class J48PartiallyConsolidated
 				"\t(default: only the first ten)",
 				"PCTB-V", 1, "-PCTB-V <mode>"));
 
-		return newVector.elements();
+	    newVector.
+	    addElement(new Option(
+	            "\tshow the explanation measures of the all decision trees" +
+	            "\tthat compose the final classifier (MCS).\n" + 
+	            "\t(default false)",
+	            "PCTB-P", 0, "-PCTB-P"));
+
+	    return newVector.elements();
 	}
-	
 	/**
 	 * Parses a given list of options.
 	 * 
@@ -554,6 +567,11 @@ public class J48PartiallyConsolidated
 	 *  None, only the first ten (if they exist) or all.  
 	 * (Default: only the first ten)<pre>
 	 * 
+	 * <pre> -PCTB-P<br>
+	 * Determines Whether to show the explanation measures of the all decision trees
+	 *  that compose the final classifier (MCS).  
+	 * (Default: false)<pre>
+	 * 
    <!-- options-end -->
 	 *
 	 * @param options the list of options as an array of strings
@@ -574,6 +592,7 @@ public class J48PartiallyConsolidated
 		else
 			setPCTBvisualizeBaseTrees(new SelectedTag(Visualize_FirstOnes, TAGS_VISUALIZE_BASE_TREES)); // default: only the first ten
 		
+	    setPCTBprintExplanationMeasuresMCS(Utils.getFlag("PCTB-P", options));
 
 		// J48 and J48Consolidated options
 		// ===============================
@@ -602,6 +621,9 @@ public class J48PartiallyConsolidated
 
 		result.add("-PCTB-V");
 		result.add("" + m_PCTBvisualizeBaseTrees);
+
+		result.add("-PCTB-P");
+		result.add("" + m_PCTBprintExplanationMeasuresMCS);
 
 		return (String[]) result.toArray(new String[result.size()]);	  
 	}
@@ -642,6 +664,26 @@ public class J48PartiallyConsolidated
 					st += m_Classifiers[iSample].toString();
 				}
 			}
+		}
+		if (m_PCTBprintExplanationMeasuresMCS) {
+			st += "\n--- Complexity/Explanation measures  ---"
+				+ "\n--- of the whole multiple classifier ---\n";
+			st += line;
+			
+			String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+			ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+			String[] stTreeMeasures = new String[]{"NumLeaves", /*"NumRules",*/ "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+			ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+
+			for(String ms: treeMeasures) {
+				st += ms + ": ";
+				for(String op: metaOperations) {
+					String mtms = "measure" + op + ms;
+					st += op + " = " + Utils.roundDouble(getMeasure(mtms),2) + " ";
+				}
+				st += "\n";
+			}
+			st += "\n";
 		}
 		return st;
 	}
@@ -702,7 +744,82 @@ public class J48PartiallyConsolidated
 		}
 		return text.toString();
 	}
-	
+
+	/**
+	 * Returns an enumeration of the additional measure names
+	 * (Added also those produced by the base algorithm).
+	 * 
+	 * @return an enumeration of the measure names
+	 */
+	@Override
+	public Enumeration<String> enumerateMeasures() {
+
+		Vector<String> newVector = new Vector<String>(1);
+		newVector.addAll(Collections.list(new J48().enumerateMeasures()));
+		String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+		ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+		String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+		ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+
+		for(String op: metaOperations)
+			for(String ms: treeMeasures)
+				newVector.addElement("measure" + op + ms);
+
+		return newVector.elements();
+	}
+
+	/**
+	 * Returns the value of the named measure.
+	 * In the case of measureTreeSize, measureNumLeaves, measureNumRules,
+	 * measureExplanationLength and measureWeightedExplanationLength it returns
+	 * the sum of the named measure of all the base classifiers. 
+	 *
+	 * @param additionalMeasureName the name of the measure to query for its value
+	 * @return the value of the named measure
+	 * @throws IllegalArgumentException if the named measure is not supported
+	 */
+	@Override
+	public double getMeasure(String additionalMeasureName) {
+		if(Collections.list(new J48().enumerateMeasures()).contains(additionalMeasureName)) {
+			return getMeasure(additionalMeasureName);
+		} else {
+			double res;
+			String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+			ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+			String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+			ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+
+			for(String op: metaOperations)
+				for(String ms: treeMeasures) {
+					String mtms = "measure" + op + ms;
+					if (additionalMeasureName.equalsIgnoreCase(mtms)) {
+						double[] vValues = new double[m_Classifiers.length];
+						String sms = "measure" + ms;
+						for(int i = 0; i < m_Classifiers.length; i++) {
+							vValues[i] = ((AdditionalMeasureProducer)(m_Classifiers[i])).getMeasure(sms);
+						}
+						int iop = metaOperations.indexOf(op);
+						switch (iop) {
+						case 0:
+							res = Utils.mean(vValues); break;
+						case 1:
+							res = vValues[Utils.minIndex(vValues)]; break;
+						case 2:
+							res = vValues[Utils.maxIndex(vValues)]; break;
+						case 3:
+							res = Utils.sum(vValues); break;
+						default:
+							throw new IllegalArgumentException(additionalMeasureName 
+									+ " not supported (Bagging)");
+						}
+						return res;
+					}
+				}
+			throw new IllegalArgumentException(additionalMeasureName 
+					+ " not supported (Bagging)");
+		}
+	}
+
 	/**
 	 * Returns the tip text for this property
 	 * @return tip text for this property suitable for
@@ -771,6 +888,35 @@ public class J48PartiallyConsolidated
 		    	throw new IllegalArgumentException("Wrong selection type, value should be: "
 		                                           + "between 1 and 3");
 		 }
+	}
+
+	/**
+	 * Returns the tip text for this property
+	 * @return tip text for this property suitable for
+	 * displaying in the explorer/experimenter gui
+	 */
+	public String PCTBprintExplanationMeasuresMCSTipText() {
+		return "Whether to show the explanation measures of all DTs.";
+	}
+	
+	/**
+	 * Set whether to show the explanation measures of all DTs. 
+	 *
+	 * @param printExplanationMeasures whether to show the explanation measures of all DTs.
+	 */
+	public void setPCTBprintExplanationMeasuresMCS(boolean printExplanationMeasures) {
+
+		m_PCTBprintExplanationMeasuresMCS = printExplanationMeasures;
+	}
+
+	/**
+	 * Get whether to show the explanation measures of all DTs.
+	 *
+	 * @return whether to to show the explanation measures
+	 */
+	public boolean getPCTBprintExplanationMeasuresMCS() {
+
+		return m_PCTBprintExplanationMeasuresMCS;
 	}
 
 }
