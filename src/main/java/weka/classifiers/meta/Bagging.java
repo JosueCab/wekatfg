@@ -1129,6 +1129,10 @@ public class Bagging
       for (int i = 0; i < m_Classifiers.length; i++)
         text.append(m_Classifiers[i].toString() + "\n");
 
+      text.append("\n--- Complexity/Explanation measures  ---");
+      text.append("\n--- of the whole multiple classifier ---");
+      text.append("\n----------------------------------------\n");
+			
 	  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
 	  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 	  String[] stTreeMeasures = new String[]{"NumLeaves", /*"NumRules",*/ "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
