@@ -1231,17 +1231,10 @@ TechnicalInformationHandler {
 	 */
 	public String toString() {
 
-		if (m_root == null) {
+		if (m_root == null)
 			return "No classifier built";
-		}
-		if (m_unpruned)
-			return "J48Consolidated unpruned tree\n" + 
-			toStringResamplingMethod() +
-			m_root.toString();
-		else
-			return "J48Consolidated pruned tree\n" + 
-			toStringResamplingMethod() +
-			m_root.toString();
+		return "J48Consolidated " + (m_unpruned? "unpruned " : "") + "tree\n" + 
+			toStringResamplingMethod() + m_root.toString();
 	}
 
 	/**
