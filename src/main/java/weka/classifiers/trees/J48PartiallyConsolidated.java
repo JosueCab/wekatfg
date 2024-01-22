@@ -622,8 +622,8 @@ public class J48PartiallyConsolidated
 		result.add("-PCTB-V");
 		result.add("" + m_PCTBvisualizeBaseTrees);
 
-		result.add("-PCTB-P");
-		result.add("" + m_PCTBprintExplanationMeasuresMCS);
+		if (m_PCTBprintExplanationMeasuresMCS)
+			result.add("-PCTB-P");
 
 		return (String[]) result.toArray(new String[result.size()]);	  
 	}
