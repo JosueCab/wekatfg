@@ -53,6 +53,9 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	/** Indicates the criteria that should be used to build the tree */
 	private int m_priorityCriteria;
 
+	/** True if the partial Consolidated tree(CT) is to be pruned. */
+	protected boolean m_pruneTheConsolidatedTree = false;
+
 	/**
 	 * Constructor for pruneable consolidated tree structure. Calls the superclass
 	 * constructor.
@@ -72,12 +75,14 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			ModelSelection toSelectLocModel, C45ModelSelectionExtended baseModelToForceDecision,
 			boolean pruneTree, float cf,
 			boolean raiseTree, boolean cleanup, 
-			boolean collapseTree, int numberSamples, int ITPCTpriorityCriteria) throws Exception {
+			boolean collapseTree, int numberSamples, 
+			int ITPCTpriorityCriteria, boolean pruneCT) throws Exception {
 		super(toSelectLocModel, baseModelToForceDecision, pruneTree, cf, raiseTree, cleanup, collapseTree,
 				numberSamples);
 
 		// Initialize each criteria
 		m_priorityCriteria = ITPCTpriorityCriteria;
+		m_pruneTheConsolidatedTree = pruneCT;
 	}
 
 	/**
@@ -93,6 +98,7 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			int consolidationNumberHowToSet) throws Exception {
 		if (m_priorityCriteria == J48It.Original) {
 
+			m_pruneTheTree = m_pruneTheConsolidatedTree;
 			super.buildClassifier(data, samplesVector, consolidationPercent);
 
 		} else {
@@ -101,10 +107,10 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			
 				super.buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup); // build the tree without restrictions
 								
-				if (m_collapseTheTree) {
+				if (m_pruneTheConsolidatedTree && m_collapseTheTree) {
 					collapse();
 				}
-				if (m_pruneTheTree) {
+				if (m_pruneTheConsolidatedTree) {
 					prune();
 				}
 
@@ -143,10 +149,10 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 
 			// buildTree
 			buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
-			if (m_collapseTheTree) {
+			if (m_pruneTheConsolidatedTree && m_collapseTheTree) {
 				collapse();
 			}
-			if (m_pruneTheTree) {
+			if (m_pruneTheConsolidatedTree) {
 				prune();
 			}
 			applyBagging();
@@ -273,7 +279,7 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 					C45ItPartiallyConsolidatedPruneableClassifierTree newTree = new C45ItPartiallyConsolidatedPruneableClassifierTree(
 							currentTree.m_toSelectModel, baseModelToForceDecision, m_pruneTheTree, m_CF,
 							m_subtreeRaising, m_cleanup, m_collapseTheTree, localSamplesVector.length,
-							m_priorityCriteria);
+							m_priorityCriteria, m_pruneTheConsolidatedTree);
 
 					/** Set the recent created base trees like the sons of the given parent node */
 					for (int iSample = 0; iSample < numberSamples; iSample++)
@@ -377,7 +383,6 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 		if (list.size() == 0) {
 			list.add(0, son);
 		} else {
-
 			double sonValue = (double) son[3];
 			for (int i = 0; i < list.size(); i++) {
 
@@ -386,17 +391,11 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 					list.add(i, son);
 					break;
 				}
-
 				if (i == list.size() - 1) {
 					list.add(son);
 					break;
 				}
-
 			}
 		}
-
 	}
-
-	
-
 }

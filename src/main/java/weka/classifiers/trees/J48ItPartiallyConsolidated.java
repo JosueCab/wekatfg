@@ -24,7 +24,6 @@
 
 package weka.classifiers.trees;
 
-
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -241,7 +240,8 @@ public class J48ItPartiallyConsolidated
 	 *   or based on a coverage value as a percentage (by default). */
 	private int m_ITPCTconsolidationPercentHowToSet = ConsolidationNumber_Percentage;
 	
-
+	/** Unpruned partial Consolidated Tree (CT)? */
+	private boolean m_ITPCTunprunedCT = false;
 	
 	/**
 	 * Returns a string describing the classifier
@@ -322,7 +322,8 @@ public class J48ItPartiallyConsolidated
 		// TODO Implement the option reducedErrorPruning of J48
 		C45ItPartiallyConsolidatedPruneableClassifierTree localClassifier =
 				new C45ItPartiallyConsolidatedPruneableClassifierTree(modSelection, baseModelToForceDecision,
-						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length, m_ITPCTpriorityCriteria);
+						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length,
+						m_ITPCTpriorityCriteria, !m_ITPCTunprunedCT);
 
 		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent, m_ITPCTconsolidationPercentHowToSet);
 
@@ -335,8 +336,6 @@ public class J48ItPartiallyConsolidated
 		((C45ModelSelection) modSelection).cleanup();
 		((C45ModelSelection) baseModelToForceDecision).cleanup();
 	}
-
-
 
 	/**
 	 * Returns an enumeration describing the available options.
@@ -435,6 +434,10 @@ public class J48ItPartiallyConsolidated
 	 * Build the tree with a maximum number of levels or nodes.
 	 * <p>
 	 * 
+	 * -ITPCT-U <br>
+	 * Use unpruned partial Consolidated Tree (CT).
+	 * <p>
+	 * 
 	 * @return an enumeration of all the available options.
 	 */
 	@Override
@@ -452,7 +455,9 @@ public class J48ItPartiallyConsolidated
 				+ "				\"\\tas a percentage (by default)", "ITPCT-P", 0, "-ITPCT-P"));
 		newVector.addElement(new Option("\tSet the number of nodes or levels to be generated based on a numeric value", "ITPCT-V", 0, "-ITPCT-V"));
 		
-		newVector.addAll(Collections.list(super.listOptions()));
+	    newVector.addElement(new Option("\tUse unpruned partial Consolidated Tree.", "ITPCT-U", 0, "-ITPCT-U"));
+
+	    newVector.addAll(Collections.list(super.listOptions()));
 		return newVector.elements();
 	}
 	
@@ -473,6 +478,9 @@ public class J48ItPartiallyConsolidated
 	 * Build the tree ordered by a criteria.
 	 * <p>
 	 * 
+	 * -ITPCT-U <br>
+	 * Use unpruned partial Consolidated Tree (CT).
+	 * <p>
 	 * 
 	 * @return an enumeration of all the available options.
 	 */
@@ -498,7 +506,9 @@ public class J48ItPartiallyConsolidated
 		else if (Utils.getFlag("ITPCT-PGN", options))
 			setITPCTpriorityCriteria(new SelectedTag(Gainratio_normalized, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
 		
-		super.setOptions(options);
+		m_ITPCTunprunedCT = Utils.getFlag("ITPCT-U", options);
+
+	    super.setOptions(options);
 	}
 
 	/**
@@ -526,12 +536,62 @@ public class J48ItPartiallyConsolidated
 			case Gainratio_normalized:
 				options.add("-ITPCT-PGN");break;
 		}
-	    if (m_ITPCTconsolidationPercentHowToSet == ConsolidationNumber_Value) options.add("-ITPCT-V");
-	    else options.add("-ITPCT-P");
-	    
-		return options.toArray(new String[0]);
+		if (m_ITPCTconsolidationPercentHowToSet == ConsolidationNumber_Value) options.add("-ITPCT-V");
+		else options.add("-ITPCT-P");
+
+		if (m_ITPCTunprunedCT) {
+			options.add("-ITPCT-U");
+		}
+
+	    return options.toArray(new String[0]);
 	}
 
+	/**
+	 * Returns a description of the classifier.
+	 * 
+	 * @return a description of the classifier
+	 */
+	public String toString() {
+		String st;
+		st = "J48ItPartiallyConsolidated-Bagging classifier\n";
+		// Add a separator
+		char[] ch_line = new char[st.length()];
+		for (int i = 0; i < ch_line.length; i++)
+			ch_line[i] = '-';
+		String line = String.valueOf(ch_line);
+		line += "\n";
+		if (m_ITPCTconsolidationPercentHowToSet == ConsolidationNumber_Percentage) {
+			st += "Consolidation percent = " + Utils.doubleToString(m_PCTBconsolidationPercent,2) + "%\n";
+		} else { // ConsolidationNumber_Value
+			st += "Number of inner nodes of the partial consolidated tree to grow = " + Utils.doubleToString(m_PCTBconsolidationPercent,0) + "\n";
+		}
+		st += "Priority criteria to grow the partial consolidated tree: ";
+		switch(m_ITPCTpriorityCriteria) {
+			case Original:
+				st += "Original (recursive)";break;
+			case Levelbylevel:
+				st += "Level by level";break;
+			case Preorder:
+				st += "Node by node - Preorder";break;
+			case Size:
+				st += "Node by node - Size";break;
+			case Gainratio:
+				st += "Node by node - Gainratio";break;
+			case Gainratio_normalized:
+				st += "Node by node - Gainratio weighted by Size";break;
+		}
+		st += "\n";
+		st += line;
+		//st += super.toString();
+		if (m_root == null)
+			st += "No classifier built";
+		else
+			st += "J48Consolidated " + (m_ITPCTunprunedCT? "unpruned " : "") + "tree\n" + 
+				toStringResamplingMethod() + m_root.toString();
+		st += toStringVisualizeBaseTrees(line);
+		st += toStringPrintExplanationMeasuresMCS(line);
+		return st;
+	}
 
 	/**
 	 * Returns the tip text for this property
@@ -623,5 +683,32 @@ public class J48ItPartiallyConsolidated
 		}
 	}
 
+	/**
+	 * Returns the tip text for this property
+	 * @return tip text for this property suitable for
+	 * displaying in the explorer/experimenter gui
+	 */
+	public String ITPCTunprunedCTTipText() {
+		return "whether to prune or not the partial Consolidated Tree (CT).";
+	}
+	
+	/**
+	 * Set whether to prune or not the partial Consolidated Tree (CT). 
+	 *
+	 * @param unprunedCT whether to prune or not the partial Consolidated Tree (CT).
+	 */
+	public void setITPCTunprunedCT(boolean unprunedCT) {
 
+		m_ITPCTunprunedCT = unprunedCT;
+	}
+
+	/**
+	 * Get whether to prune or not the partial Consolidated Tree (CT).
+	 *
+	 * @return whether to prune or not the partial Consolidated Tree (CT).
+	 */
+	public boolean getITPCTunprunedCT() {
+
+		return m_ITPCTunprunedCT;
+	}
 }
