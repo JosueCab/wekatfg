@@ -645,6 +645,18 @@ public class J48PartiallyConsolidated
 		st += "Consolidation percent = " + Utils.doubleToString(m_PCTBconsolidationPercent,2) + "%\n";
 		st += line;
 		st += super.toString();
+		st += toStringVisualizeBaseTrees(line);
+		st += toStringPrintExplanationMeasuresMCS(line);
+		return st;
+	}
+
+	/**
+	 * Returns the base trees as text
+	 * 
+	 * @return the base trees as text
+	 */
+	public String toStringVisualizeBaseTrees(String line) {
+		String st = "";
 		if (m_PCTBvisualizeBaseTrees > Visualize_None) {
 			/** Base tree vector */
 			if (m_Classifiers != null){
@@ -652,11 +664,11 @@ public class J48PartiallyConsolidated
 				st += line;
 				if ((m_PCTBvisualizeBaseTrees == Visualize_All) || (m_Classifiers.length <= 10)) {
 					maxBaseTrees = m_Classifiers.length;
-					st += "Set of " + m_Classifiers.length + " base trees:\n";
+					st += "Set of " + m_Classifiers.length + " base " + (m_unpruned? "unpruned " : "") + "trees:\n";
 				}
 				else {
 					maxBaseTrees = 10;
-					st += "Set of " + m_Classifiers.length + " base trees (*Only the first ten!):\n";
+					st += "Set of " + m_Classifiers.length + " base " + (m_unpruned? "unpruned " : "") + "trees (*Only the first ten!):\n";
 				}
 				for (int iSample = 0; iSample < maxBaseTrees; iSample++){
 					st += line;
@@ -665,6 +677,17 @@ public class J48PartiallyConsolidated
 				}
 			}
 		}
+		return st;
+	}
+
+	/**
+	 * Returns a description of the explanation measures of the all decision trees
+	 *  that compose the final classifier (MCS)
+	 * 
+	 * @return a description of the explanation measures of all DTs
+	 */
+	public String toStringPrintExplanationMeasuresMCS(String line) {
+		String st = "";
 		if (m_PCTBprintExplanationMeasuresMCS) {
 			st += "\n--- Complexity/Explanation measures  ---"
 				+ "\n--- of the whole multiple classifier ---\n";
