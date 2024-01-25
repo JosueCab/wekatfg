@@ -541,6 +541,7 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 			}
 			text.append("\n\nNumber of Leaves  : \t" + numLeaves() + "\n");
 			text.append("\nSize of the tree : \t" + numNodes() + "\n");
+			text.append("=> Number of inner nodes : \t" + (numNodes()-numLeaves()) + "\n");
 	        text.append("\nAverage length of branches : \t" + 
 	        		Utils.roundDouble(averageBranchesLength(false),2) + "\n");
 	        text.append("\nAverage length of Branches weighted by leaves size : \t" + 
