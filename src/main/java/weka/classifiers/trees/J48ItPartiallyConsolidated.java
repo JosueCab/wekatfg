@@ -241,7 +241,10 @@ public class J48ItPartiallyConsolidated
 	private int m_ITPCTconsolidationPercentHowToSet = ConsolidationNumber_Percentage;
 	
 	/** Unpruned partial Consolidated Tree (CT)? */
-	private boolean m_ITPCTunprunedCT = false;
+	private boolean m_ITPCTunprunedCT = true;
+	
+	/** Collapse partial Consolidated Tree (CT)? */
+	private boolean m_ITPCTcollapseCT = false;
 	
 	/**
 	 * Returns a string describing the classifier
@@ -323,7 +326,7 @@ public class J48ItPartiallyConsolidated
 		C45ItPartiallyConsolidatedPruneableClassifierTree localClassifier =
 				new C45ItPartiallyConsolidatedPruneableClassifierTree(modSelection, baseModelToForceDecision,
 						!m_unpruned, m_CF, m_subtreeRaising, !m_noCleanup, m_collapseTree, samplesVector.length,
-						m_ITPCTpriorityCriteria, !m_ITPCTunprunedCT);
+						m_ITPCTpriorityCriteria, !m_ITPCTunprunedCT, m_ITPCTcollapseCT);
 
 		localClassifier.buildClassifier(instances, samplesVector, m_PCTBconsolidationPercent, m_ITPCTconsolidationPercentHowToSet);
 
@@ -438,6 +441,10 @@ public class J48ItPartiallyConsolidated
 	 * Use unpruned partial Consolidated Tree (CT).
 	 * <p>
 	 * 
+	 * -ITPCT-C <br>
+	 * Collapse the partial Consolidated Tree (CT).
+	 * <p>
+	 * 
 	 * @return an enumeration of all the available options.
 	 */
 	@Override
@@ -456,6 +463,7 @@ public class J48ItPartiallyConsolidated
 		newVector.addElement(new Option("\tSet the number of nodes or levels to be generated based on a numeric value", "ITPCT-V", 0, "-ITPCT-V"));
 		
 	    newVector.addElement(new Option("\tUse unpruned partial Consolidated Tree.", "ITPCT-U", 0, "-ITPCT-U"));
+	    newVector.addElement(new Option("\tCollpase the partial Consolidated Tree.", "ITPCT-C", 0, "-ITPCT-C"));
 
 	    newVector.addAll(Collections.list(super.listOptions()));
 		return newVector.elements();
@@ -480,6 +488,10 @@ public class J48ItPartiallyConsolidated
 	 * 
 	 * -ITPCT-U <br>
 	 * Use unpruned partial Consolidated Tree (CT).
+	 * <p>
+	 * 
+	 * -ITPCT-C <br>
+	 * Collapse the partial Consolidated Tree (CT).
 	 * <p>
 	 * 
 	 * @return an enumeration of all the available options.
@@ -507,6 +519,7 @@ public class J48ItPartiallyConsolidated
 			setITPCTpriorityCriteria(new SelectedTag(Gainratio_normalized, TAGS_WAYS_TO_SET_PRIORITY_CRITERIA));
 		
 		m_ITPCTunprunedCT = Utils.getFlag("ITPCT-U", options);
+		m_ITPCTcollapseCT = Utils.getFlag("ITPCT-C", options);
 
 	    super.setOptions(options);
 	}
@@ -541,6 +554,10 @@ public class J48ItPartiallyConsolidated
 
 		if (m_ITPCTunprunedCT) {
 			options.add("-ITPCT-U");
+		}
+
+		if (m_ITPCTcollapseCT) {
+			options.add("-ITPCT-C");
 		}
 
 	    return options.toArray(new String[0]);
@@ -586,7 +603,7 @@ public class J48ItPartiallyConsolidated
 		if (m_root == null)
 			st += "No classifier built";
 		else
-			st += "J48Consolidated " + (m_ITPCTunprunedCT? "unpruned " : "") + "tree\n" + 
+			st += "J48Consolidated " + (m_ITPCTunprunedCT? "unpruned " : "") + (m_ITPCTcollapseCT? "(collapsed) " : "") + "tree\n" + 
 				toStringResamplingMethod() + m_root.toString();
 		st += toStringVisualizeBaseTrees(line);
 		st += toStringPrintExplanationMeasuresMCS(line);
@@ -710,5 +727,34 @@ public class J48ItPartiallyConsolidated
 	public boolean getITPCTunprunedCT() {
 
 		return m_ITPCTunprunedCT;
+	}
+
+	/**
+	 * Returns the tip text for this property
+	 * @return tip text for this property suitable for
+	 * displaying in the explorer/experimenter gui
+	 */
+	public String ITPCTcollapseCTTipText() {
+		return "whether to collapse or not the partial Consolidated Tree (CT).";
+	}
+	
+	/**
+	 * Set whether to collapse or not the partial Consolidated Tree (CT). 
+	 *
+	 * @param unprunedCT whether to collapse or not the partial Consolidated Tree (CT).
+	 */
+	public void setITPCTcollapseCT(boolean collapseCT) {
+
+		m_ITPCTcollapseCT = collapseCT;
+	}
+
+	/**
+	 * Get whether to collapse or not the partial Consolidated Tree (CT).
+	 *
+	 * @return whether to collapse or not the partial Consolidated Tree (CT).
+	 */
+	public boolean getITPCTcollapseCT() {
+
+		return m_ITPCTcollapseCT;
 	}
 }
