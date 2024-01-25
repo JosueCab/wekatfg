@@ -411,4 +411,34 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 				list.add(son);
 		}
 	}
+
+	/**
+	 * Help method for printing tree structure.
+	 * 
+	 * @param depth the current depth
+	 * @param text  for outputting the structure
+	 * @throws Exception if something goes wrong
+	 */
+	public void dumpTree(int depth, StringBuffer text) throws Exception {
+
+		int i, j;
+
+		for (i = 0; i < m_sons.length; i++) {
+			text.append("\n");
+			;
+			for (j = 0; j < depth; j++) {
+				text.append("|   ");
+			}
+			text.append("[" + m_order + "] ");
+			text.append(m_localModel.leftSide(m_train));
+			text.append(m_localModel.rightSide(i, m_train));
+			if (m_sons[i].isLeaf()) {
+				text.append(": ");
+				text.append("[" + ((C45ItPartiallyConsolidatedPruneableClassifierTree)m_sons[i]).m_order + "] ");
+				text.append(m_localModel.dumpLabel(i, m_train));
+			} else {
+				m_sons[i].dumpTree(depth + 1, text);
+			}
+		}
+	}
 }
