@@ -4,14 +4,11 @@
 package weka.classifiers.trees.j48ItPartiallyConsolidated;
 
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedModelSelection;
-import weka.classifiers.trees.j48Consolidated.C45ConsolidatedPruneableClassifierTree;
-import weka.classifiers.trees.j48It.C45ItPruneableClassifierTree;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45ModelSelectionExtended;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45PartiallyConsolidatedPruneableClassifierTree;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45PruneableClassifierTreeExtended;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 import weka.classifiers.trees.J48It;
 import weka.classifiers.trees.J48ItPartiallyConsolidated;
@@ -19,7 +16,6 @@ import weka.classifiers.trees.j48.C45Split;
 import weka.classifiers.trees.j48.ClassifierSplitModel;
 import weka.classifiers.trees.j48.ClassifierTree;
 import weka.classifiers.trees.j48.ModelSelection;
-import weka.classifiers.trees.j48.NoSplit;
 import weka.core.Instances;
 import weka.core.Utils;
 
@@ -32,8 +28,8 @@ import weka.core.Utils;
  * j48/ClassifierTree class in order to overwrite these functions here.
  * *************************************************************************************<br/>
  *
- * @author JosuÃ© Cabezas Regoyo
- * @author JesÃºs M. PÃ©rez (txus.perez@ehu.eus)
+ * @author Josué Cabezas Regoyo
+ * @author Jesús M. Pérez (txus.perez@ehu.eus)
  * @version $Revision: 0.3 $
  */
 public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45PartiallyConsolidatedPruneableClassifierTree {
@@ -172,6 +168,20 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	 * @throws Exception if something goes wrong
 	 */
 	public void buildTree(Instances data, Instances[] samplesVector, boolean keepData) throws Exception {
+		/** Number of Samples. */
+		int numberSamples = samplesVector.length;
+
+		/** Initialize the consolidated tree */
+		if (keepData) {
+			m_train = data;
+		}
+		m_test = null;
+		m_isLeaf = false;
+		m_isEmpty = false;
+		m_sons = null;
+		/** Initialize the base trees */
+		for (int iSample = 0; iSample < numberSamples; iSample++)
+			m_sampleTreeVector[iSample].initiliazeTree(samplesVector[iSample], keepData);
 
 		ArrayList<Object[]> list = new ArrayList<>();
 
@@ -192,7 +202,7 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 
 			/** Number of Samples. */
 			Instances[] currentSamplesVector = (Instances[]) current[1];
-			int numberSamples = currentSamplesVector.length;
+			//int numberSamples = currentSamplesVector.length;
 
 			list.set(0, null); // Null to free up memory
 			list.remove(0);
@@ -265,6 +275,8 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 							.createSonsVector(currentTree.m_localModel.numSubsets());
 
 				//////////////////
+				C45ModelSelectionExtended baseModelToForceDecision = 
+						currentTree.m_sampleTreeVector[0].getBaseModelToForceDecision();
 				for (int iSon = 0; iSon < currentTree.m_sons.length; iSon++) {
 					/** Vector storing the subsamples related to the iSon-th son */
 					Instances[] localSamplesVector = new Instances[numberSamples];
@@ -272,10 +284,6 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 						localSamplesVector[iSample] = ((Instances[]) localInstancesVector.get(iSample))[iSon];
 
 					// getNewTree
-
-					C45ModelSelectionExtended baseModelToForceDecision = currentTree.m_sampleTreeVector[0]
-							.getBaseModelToForceDecision();
-
 					C45ItPartiallyConsolidatedPruneableClassifierTree newTree = new C45ItPartiallyConsolidatedPruneableClassifierTree(
 							currentTree.m_toSelectModel, baseModelToForceDecision, m_pruneTheTree, m_CF,
 							m_subtreeRaising, m_cleanup, m_collapseTheTree, localSamplesVector.length,
@@ -381,21 +389,19 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 
 	public void addSonOrderedByValue(ArrayList<Object[]> list, Object[] son) {
 		if (list.size() == 0) {
-			list.add(0, son);
+			list.add(son);
 		} else {
+			int i;
 			double sonValue = (double) son[3];
-			for (int i = 0; i < list.size(); i++) {
-
+			for (i = 0; i < list.size(); i++) {
 				double parentValue = (double) list.get(i)[3];
 				if (parentValue < sonValue) {
 					list.add(i, son);
 					break;
 				}
-				if (i == list.size() - 1) {
-					list.add(son);
-					break;
-				}
 			}
+			if (i == list.size())
+				list.add(son);
 		}
 	}
 }
