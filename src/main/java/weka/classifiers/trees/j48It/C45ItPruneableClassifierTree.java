@@ -208,7 +208,6 @@ public class C45ItPruneableClassifierTree extends C45PruneableClassifierTree {
 				text.append("|   ");
 			}
 			text.append("[" + m_order + "] ");
-			//text.append(m_isEmpty);
 			text.append(m_localModel.leftSide(m_train));
 			text.append(m_localModel.rightSide(i, m_train));
 			if (m_sons[i].isLeaf()) {
