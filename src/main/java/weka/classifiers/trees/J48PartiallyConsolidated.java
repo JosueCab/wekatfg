@@ -778,7 +778,7 @@ public class J48PartiallyConsolidated
 	public Enumeration<String> enumerateMeasures() {
 
 		Vector<String> newVector = new Vector<String>(1);
-		newVector.addAll(Collections.list(new J48().enumerateMeasures()));
+		newVector.addAll(Collections.list(new J48Consolidated().enumerateMeasures()));
 		String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
 		ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 		String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
@@ -803,8 +803,8 @@ public class J48PartiallyConsolidated
 	 */
 	@Override
 	public double getMeasure(String additionalMeasureName) {
-		if(Collections.list(new J48().enumerateMeasures()).contains(additionalMeasureName)) {
-			return getMeasure(additionalMeasureName);
+		if(Collections.list(new J48Consolidated().enumerateMeasures()).contains(additionalMeasureName)) {
+			return super.getMeasure(additionalMeasureName);
 		} else {
 			double res;
 			String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};

@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import weka.classifiers.Classifier;
 import weka.classifiers.RandomizableParallelIteratedSingleClassifierEnhancer;
 import weka.classifiers.evaluation.Evaluation;
+import weka.classifiers.trees.J48;
 import weka.core.*;
 import weka.core.TechnicalInformation.Field;
 import weka.core.TechnicalInformation.Type;
@@ -662,8 +663,16 @@ public class Bagging
     
     Vector<String> newVector = new Vector<String>(1);
     newVector.addElement("measureOutOfBagError");
-    if (m_Classifier instanceof AdditionalMeasureProducer)
-    	newVector.addAll(Collections.list(((AdditionalMeasureProducer)m_Classifier).enumerateMeasures()));
+    if (m_Classifier instanceof J48) {
+    	String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+    	ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+    	String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+    	ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+
+    	for(String op: metaOperations)
+    		for(String ms: treeMeasures)
+    			newVector.addElement("measure" + op + ms);
+    }
     return newVector.elements();
   }
   
@@ -682,13 +691,13 @@ public class Bagging
 
 	  if (additionalMeasureName.equalsIgnoreCase("measureOutOfBagError")) {
 		  return measureOutOfBagError();
-	  } else if (m_Classifier instanceof AdditionalMeasureProducer) {
+	  } else if (m_Classifier instanceof J48) {
 		  double res;
 		  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
 		  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 		  String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
 		  ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
-		  
+
 		  for(String op: metaOperations)
 			  for(String ms: treeMeasures) {
 				  String mtms = "measure" + op + ms;
@@ -699,26 +708,25 @@ public class Bagging
 						  vValues[i] = ((AdditionalMeasureProducer)(m_Classifiers[i])).getMeasure(sms);
 					  int iop = metaOperations.indexOf(op);
 					  switch (iop) {
-					    case 0:
-					    	res = Utils.mean(vValues); break;
-					    case 1:
-							res = vValues[Utils.minIndex(vValues)]; break;
-					    case 2:
-					    	res = vValues[Utils.maxIndex(vValues)]; break;
-					    case 3:
-					    	res = Utils.sum(vValues); break;
-					    default:
-					    	throw new IllegalArgumentException(additionalMeasureName 
-									  + " not supported (Bagging)");
+					  case 0:
+						  res = Utils.mean(vValues); break;
+					  case 1:
+						  res = vValues[Utils.minIndex(vValues)]; break;
+					  case 2:
+						  res = vValues[Utils.maxIndex(vValues)]; break;
+					  case 3:
+						  res = Utils.sum(vValues); break;
+					  default:
+						  throw new IllegalArgumentException(additionalMeasureName 
+								  + " not supported (Bagging)");
 					  }
 					  return res;
 				  }
 			  }
-			  throw new IllegalArgumentException(additionalMeasureName 
-					  + " not supported (Bagging)");
-		  }
-		  else throw new IllegalArgumentException(additionalMeasureName 
-				  + " not supported (Bagging)");
+		  return Double.NaN;
+	  }
+	  else throw new IllegalArgumentException(additionalMeasureName 
+			  + " not supported (Bagging)");
   }
 
   /**
