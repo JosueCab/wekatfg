@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Stack;
 
+import weka.core.AdditionalMeasureProducer;
 import weka.core.Capabilities;
 import weka.core.CapabilitiesHandler;
 import weka.core.Drawable;
@@ -481,8 +482,45 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 
 		return no;
 	}
-	
 
+	/**
+	 * Returns the average length of all the branches from root to leaf.
+	 * If weighted is true, takes into account the proportion of instances fallen into each leaf
+	 * 
+	 * @return the average length of all the branches
+	 */
+	public double averageBranchesLength(boolean weighted) {
+
+		double rootSize = m_localModel.distribution().total(); 
+		double sum = sumBranchesLength(weighted, 0, (double)0.0, rootSize);
+		if (weighted)
+			return sum;
+		else
+			return sum / numLeaves();
+	}
+
+	/**
+	 * Returns the sum of the length of all the branches from root to leaf.
+	 * If weighted is true, takes into account the proportion of instances fallen into each leaf
+	 * 
+	 * @return the sum of then length of all the branches
+	 */
+	public double sumBranchesLength(boolean weighted, int partialLength, double partialSum, double rootSize) {
+
+		if (m_isLeaf) {
+			if (weighted) {
+				double leafSize = m_localModel.distribution().total(); 
+				return ((leafSize / rootSize) * partialLength) + partialSum;
+			} else
+				return partialLength + partialSum;
+		}
+		else {
+			double previousSum = partialSum;
+			for (int i = 0; i < m_sons.length; i++)
+				previousSum = m_sons[i].sumBranchesLength(weighted, partialLength + 1, previousSum, rootSize);
+			return previousSum;
+		}
+	}
 
 	/**
 	 * Prints tree structure.
@@ -503,6 +541,11 @@ public class ClassifierTree implements Drawable, Serializable, RevisionHandler, 
 			}
 			text.append("\n\nNumber of Leaves  : \t" + numLeaves() + "\n");
 			text.append("\nSize of the tree : \t" + numNodes() + "\n");
+			text.append("=> Number of inner nodes : \t" + (numNodes()-numLeaves()) + "\n");
+	        text.append("\nAverage length of branches : \t" + 
+	        		Utils.roundDouble(averageBranchesLength(false),2) + "\n");
+	        text.append("\nAverage length of Branches weighted by leaves size : \t" + 
+	        		Utils.roundDouble(averageBranchesLength(true),2) + "\n");
 
 			return text.toString();
 		} catch (Exception e) {

@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import weka.classifiers.Classifier;
 import weka.classifiers.RandomizableParallelIteratedSingleClassifierEnhancer;
 import weka.classifiers.evaluation.Evaluation;
+import weka.classifiers.trees.J48;
 import weka.core.*;
 import weka.core.TechnicalInformation.Field;
 import weka.core.TechnicalInformation.Type;
@@ -180,6 +181,10 @@ public class Bagging
 
   /** Reference to the training data */
   protected Instances m_data;
+  
+  /** Whether to classify using the Majority Voting combination rule. Can
+   * assume that class is nominal. */
+  private boolean m_MajorityVotingRule = false;
 
   /**
    * Constructor.
@@ -264,6 +269,9 @@ public class Bagging
               "represent-copies-using-weights", 0, "-represent-copies-using-weights"));
     newVector.addElement(new Option(
               "\tPrint the individual classifiers in the output", "print", 0, "-print"));
+    newVector.addElement(new Option(
+            "\tClassify using the Majority Voting combination rule",
+            "V", 0, "-V"));
 
     newVector.addAll(Collections.list(super.listOptions()));
  
@@ -345,6 +353,9 @@ public class Bagging
    * <pre> -R
    *  Spread initial count over all class values (i.e. don't use 1 per value)</pre>
    *
+   * <pre> -V
+   *  Classify using the Majority Voting combination rule.</pre>
+   *
    <!-- options-end -->
    *
    * Options after -- are passed to the designated classifier.<p>
@@ -371,6 +382,8 @@ public class Bagging
     setRepresentCopiesUsingWeights(Utils.getFlag("represent-copies-using-weights", options));
 
     setPrintClassifiers(Utils.getFlag("print", options));
+    
+    setMajorityVotingRule(Utils.getFlag('V', options));
 
     super.setOptions(options);
   }
@@ -406,6 +419,10 @@ public class Bagging
 
     if (getPrintClassifiers()) {
       options.add("-print");
+    }
+
+    if (getMajorityVotingRule()) { 
+        options.add("-V");
     }
 
     Collections.addAll(options, super.getOptions());
@@ -528,6 +545,36 @@ public class Bagging
 
     return m_CalcOutOfBag;
   }
+  
+  /**
+   * Returns the tip text for this property
+   * @return tip text for this property suitable for
+   * displaying in the explorer/experimenter gui
+   */
+  public String majorityVotingRuleTipText() {
+    return "Whether to classify using the Majority Voting combination rule is used.";
+  }
+
+  /**
+   * Set whether to classify using the Majority Voting combination rule. 
+   *
+   * @param majorityVotingRule whether to classify using the Majority Voting combination rule
+   */
+  public void setMajorityVotingRule(boolean majorityVotingRule) {
+
+    m_MajorityVotingRule = majorityVotingRule;
+  }
+
+  /**
+   * Get whether to classify using the Majority Voting combination rule is used.
+   *
+   * @return whether to classify using the Majority Voting combination rule is used
+   */
+  public boolean getMajorityVotingRule() {
+
+    return m_MajorityVotingRule;
+  }
+  
   /**
    * Returns the tip text for this property
    * @return tip text for this property suitable for
@@ -606,8 +653,9 @@ public class Bagging
   }
   
   /**
-   * Returns an enumeration of the additional measure names.
-   *
+   * Returns an enumeration of the additional measure names
+   * (Added also those produced by the base algorithm).
+   * 
    * @return an enumeration of the measure names
    */
   @Override
@@ -615,11 +663,24 @@ public class Bagging
     
     Vector<String> newVector = new Vector<String>(1);
     newVector.addElement("measureOutOfBagError");
+    if (m_Classifier instanceof J48) {
+    	String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+    	ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+    	String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+    	ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+
+    	for(String op: metaOperations)
+    		for(String ms: treeMeasures)
+    			newVector.addElement("measure" + op + ms);
+    }
     return newVector.elements();
   }
   
   /**
    * Returns the value of the named measure.
+   * In the case of measureTreeSize, measureNumLeaves, measureNumRules,
+   * measureExplanationLength and measureWeightedExplanationLength it returns
+   * the sum of the named measure of all the base classifiers. 
    *
    * @param additionalMeasureName the name of the measure to query for its value
    * @return the value of the named measure
@@ -627,13 +688,45 @@ public class Bagging
    */
   @Override
   public double getMeasure(String additionalMeasureName) {
-    
-    if (additionalMeasureName.equalsIgnoreCase("measureOutOfBagError")) {
-      return measureOutOfBagError();
-    }
-    else {throw new IllegalArgumentException(additionalMeasureName 
-					     + " not supported (Bagging)");
-    }
+
+	  if (additionalMeasureName.equalsIgnoreCase("measureOutOfBagError")) {
+		  return measureOutOfBagError();
+	  } else if (m_Classifier instanceof J48) {
+		  double res;
+		  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+		  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+		  String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+		  ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+
+		  for(String op: metaOperations)
+			  for(String ms: treeMeasures) {
+				  String mtms = "measure" + op + ms;
+				  if (additionalMeasureName.equalsIgnoreCase(mtms)) {
+					  double[] vValues = new double[m_Classifiers.length];
+					  String sms = "measure" + ms;
+					  for(int i = 0; i < m_Classifiers.length; i++)
+						  vValues[i] = ((AdditionalMeasureProducer)(m_Classifiers[i])).getMeasure(sms);
+					  int iop = metaOperations.indexOf(op);
+					  switch (iop) {
+					  case 0:
+						  res = Utils.mean(vValues); break;
+					  case 1:
+						  res = vValues[Utils.minIndex(vValues)]; break;
+					  case 2:
+						  res = vValues[Utils.maxIndex(vValues)]; break;
+					  case 3:
+						  res = Utils.sum(vValues); break;
+					  default:
+						  throw new IllegalArgumentException(additionalMeasureName 
+								  + " not supported (Bagging)");
+					  }
+					  return res;
+				  }
+			  }
+		  return Double.NaN;
+	  }
+	  else throw new IllegalArgumentException(additionalMeasureName 
+			  + " not supported (Bagging)");
   }
 
   /**
@@ -786,9 +879,17 @@ public class Bagging
           numPreds++;
         }
       } else {
-        newProbs = m_Classifiers[i].distributionForInstance(instance);
-        for (int j = 0; j < newProbs.length; j++)
-          sums[j] += newProbs[j];
+    	  if (m_MajorityVotingRule) {
+    		  double pred = m_Classifiers[i].classifyInstance(instance);
+    		  if (!Utils.isMissingValue(pred)) {
+    			  sums[(int)pred]++;
+    			  numPreds++;
+    		  }
+    	  } else {
+    		  newProbs = m_Classifiers[i].distributionForInstance(instance);
+    		  for (int j = 0; j < newProbs.length; j++)
+    			  sums[j] += newProbs[j];
+    	  }
       }
     }
     if (m_Numeric) {
@@ -798,11 +899,21 @@ public class Bagging
         sums[0] /= numPreds;
       }
       return sums;
-    } else if (Utils.eq(Utils.sum(sums), 0)) {
-      return sums;
+    } else if (m_MajorityVotingRule) {
+		int mostVotedClass = Utils.maxIndex(sums);
+	    // set probs to 0
+		newProbs = new double[instance.numClasses()];
+
+		newProbs[mostVotedClass] = 1; // the class that have been voted the most
+	                              // receives 1
+	    return newProbs;
     } else {
-      Utils.normalize(sums);
-      return sums;
+        if (Utils.eq(Utils.sum(sums), 0)) {
+            return sums;
+          } else {
+            Utils.normalize(sums);
+            return sums;
+          }
     }
   }
 
@@ -1024,7 +1135,26 @@ public class Bagging
     if (getPrintClassifiers()) {
       text.append("All the base classifiers: \n\n");
       for (int i = 0; i < m_Classifiers.length; i++)
-        text.append(m_Classifiers[i].toString() + "\n\n");
+        text.append(m_Classifiers[i].toString() + "\n");
+
+      text.append("\n--- Complexity/Explanation measures  ---");
+      text.append("\n--- of the whole multiple classifier ---");
+      text.append("\n----------------------------------------\n");
+			
+	  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+	  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
+	  String[] stTreeMeasures = new String[]{"NumLeaves", /*"NumRules",*/ "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
+	  ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
+	  
+	  for(String ms: treeMeasures) {
+	      text.append(ms + ": ");
+		  for(String op: metaOperations) {
+			  String mtms = "measure" + op + ms;
+		      text.append(op + " = " + Utils.roundDouble(getMeasure(mtms),2) + " ");
+		  }
+	      text.append("\n");
+	  }
+      text.append("\n");
     }
     if (m_CalcOutOfBag) {
       text.append(m_OutOfBagEvaluationObject.toSummaryString("\n\n*** Out-of-bag estimates ***\n", getOutputOutOfBagComplexityStatistics()));

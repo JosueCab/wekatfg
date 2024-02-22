@@ -4,14 +4,11 @@
 package weka.classifiers.trees.j48ItPartiallyConsolidated;
 
 import weka.classifiers.trees.j48Consolidated.C45ConsolidatedModelSelection;
-import weka.classifiers.trees.j48Consolidated.C45ConsolidatedPruneableClassifierTree;
-import weka.classifiers.trees.j48It.C45ItPruneableClassifierTree;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45ModelSelectionExtended;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45PartiallyConsolidatedPruneableClassifierTree;
 import weka.classifiers.trees.j48PartiallyConsolidated.C45PruneableClassifierTreeExtended;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 import weka.classifiers.trees.J48It;
 import weka.classifiers.trees.J48ItPartiallyConsolidated;
@@ -19,7 +16,6 @@ import weka.classifiers.trees.j48.C45Split;
 import weka.classifiers.trees.j48.ClassifierSplitModel;
 import weka.classifiers.trees.j48.ClassifierTree;
 import weka.classifiers.trees.j48.ModelSelection;
-import weka.classifiers.trees.j48.NoSplit;
 import weka.core.Instances;
 import weka.core.Utils;
 
@@ -32,8 +28,8 @@ import weka.core.Utils;
  * j48/ClassifierTree class in order to overwrite these functions here.
  * *************************************************************************************<br/>
  *
- * @author JosuÃ© Cabezas Regoyo
- * @author JesÃºs M. PÃ©rez (txus.perez@ehu.eus)
+ * @author Josué Cabezas Regoyo
+ * @author Jesús M. Pérez (txus.perez@ehu.eus)
  * @version $Revision: 0.3 $
  */
 public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45PartiallyConsolidatedPruneableClassifierTree {
@@ -53,6 +49,12 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	/** Indicates the criteria that should be used to build the tree */
 	private int m_priorityCriteria;
 
+	/** True if the partial Consolidated tree(CT) is to be pruned. */
+	protected boolean m_pruneTheConsolidatedTree = false;
+	
+	/** True if the partial Consolidated tree(CT) is to be collapsed. */
+	protected boolean m_collapseTheCTree = false;
+
 	/**
 	 * Constructor for pruneable consolidated tree structure. Calls the superclass
 	 * constructor.
@@ -66,23 +68,23 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	 * @param numberSamples         Number of Samples
 	 * @param ITPCTmaximumCriteria  maximum number of nodes or levels
 	 * @param ITPCTpriorityCriteria criteria to build the tree
+	 * @param pruneCT true if the CT tree is to be pruned
+	 * @param collapseCT true if the CT tree is to be collapsed
 	 * @throws Exception if something goes wrong
 	 */
-	public C45ItPartiallyConsolidatedPruneableClassifierTree(ModelSelection toSelectLocModel,
-			C45ModelSelectionExtended baseModelToForceDecision, boolean pruneTree, float cf, boolean raiseTree,
-			boolean cleanup, boolean collapseTree, int numberSamples, int ITPCTpriorityCriteria) throws Exception {
+	public C45ItPartiallyConsolidatedPruneableClassifierTree(
+			ModelSelection toSelectLocModel, C45ModelSelectionExtended baseModelToForceDecision,
+			boolean pruneTree, float cf,
+			boolean raiseTree, boolean cleanup, 
+			boolean collapseTree, int numberSamples, 
+			int ITPCTpriorityCriteria, boolean pruneCT, boolean collapseCT) throws Exception {
 		super(toSelectLocModel, baseModelToForceDecision, pruneTree, cf, raiseTree, cleanup, collapseTree,
 				numberSamples);
 
 		// Initialize each criteria
 		m_priorityCriteria = ITPCTpriorityCriteria;
-
-		// Initialize each base decision tree of the vector
-		ModelSelection modelToConsolidate = ((C45ConsolidatedModelSelection) toSelectLocModel).getModelToConsolidate();
-		m_sampleTreeVector = new C45PruneableClassifierTreeExtended[numberSamples];
-		for (int iSample = 0; iSample < numberSamples; iSample++)
-			m_sampleTreeVector[iSample] = new C45PruneableClassifierTreeExtended(modelToConsolidate,
-					baseModelToForceDecision, pruneTree, cf, raiseTree, cleanup, collapseTree);
+		m_pruneTheConsolidatedTree = pruneCT;
+		m_collapseTheCTree = collapseCT;
 	}
 
 	/**
@@ -98,21 +100,20 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			int consolidationNumberHowToSet) throws Exception {
 		if (m_priorityCriteria == J48It.Original) {
 
+			m_pruneTheTree = m_pruneTheConsolidatedTree;
+			m_collapseTheTree = m_collapseTheCTree;
 			super.buildClassifier(data, samplesVector, consolidationPercent);
 
 		} else {
-			
-			System.out.println("it buildClassifer");
-			
 			if (consolidationNumberHowToSet == J48ItPartiallyConsolidated.ConsolidationNumber_Percentage) {
 								
 			
 				super.buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup); // build the tree without restrictions
 								
-				if (m_collapseTheTree) {
+				if (m_collapseTheCTree) {
 					collapse();
 				}
-				if (m_pruneTheTree) {
+				if (m_pruneTheConsolidatedTree) {
 					prune();
 				}
 
@@ -151,10 +152,10 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 
 			// buildTree
 			buildTree(data, samplesVector, m_subtreeRaising || !m_cleanup);
-			if (m_collapseTheTree) {
+			if (m_collapseTheCTree) {
 				collapse();
 			}
-			if (m_pruneTheTree) {
+			if (m_pruneTheConsolidatedTree) {
 				prune();
 			}
 			applyBagging();
@@ -174,6 +175,20 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 	 * @throws Exception if something goes wrong
 	 */
 	public void buildTree(Instances data, Instances[] samplesVector, boolean keepData) throws Exception {
+		/** Number of Samples. */
+		int numberSamples = samplesVector.length;
+
+		/** Initialize the consolidated tree */
+		if (keepData) {
+			m_train = data;
+		}
+		m_test = null;
+		m_isLeaf = false;
+		m_isEmpty = false;
+		m_sons = null;
+		/** Initialize the base trees */
+		for (int iSample = 0; iSample < numberSamples; iSample++)
+			m_sampleTreeVector[iSample].initiliazeTree(samplesVector[iSample], keepData);
 
 		ArrayList<Object[]> list = new ArrayList<>();
 
@@ -194,7 +209,7 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 
 			/** Number of Samples. */
 			Instances[] currentSamplesVector = (Instances[]) current[1];
-			int numberSamples = currentSamplesVector.length;
+			//int numberSamples = currentSamplesVector.length;
 
 			list.set(0, null); // Null to free up memory
 			list.remove(0);
@@ -267,6 +282,8 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 							.createSonsVector(currentTree.m_localModel.numSubsets());
 
 				//////////////////
+				C45ModelSelectionExtended baseModelToForceDecision = 
+						currentTree.m_sampleTreeVector[0].getBaseModelToForceDecision();
 				for (int iSon = 0; iSon < currentTree.m_sons.length; iSon++) {
 					/** Vector storing the subsamples related to the iSon-th son */
 					Instances[] localSamplesVector = new Instances[numberSamples];
@@ -274,14 +291,10 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 						localSamplesVector[iSample] = ((Instances[]) localInstancesVector.get(iSample))[iSon];
 
 					// getNewTree
-
-					C45ModelSelectionExtended baseModelToForceDecision = currentTree.m_sampleTreeVector[0]
-							.getBaseModelToForceDecision();
-
 					C45ItPartiallyConsolidatedPruneableClassifierTree newTree = new C45ItPartiallyConsolidatedPruneableClassifierTree(
 							currentTree.m_toSelectModel, baseModelToForceDecision, m_pruneTheTree, m_CF,
 							m_subtreeRaising, m_cleanup, m_collapseTheTree, localSamplesVector.length,
-							m_priorityCriteria);
+							m_priorityCriteria, m_pruneTheConsolidatedTree, m_collapseTheCTree);
 
 					/** Set the recent created base trees like the sons of the given parent node */
 					for (int iSample = 0; iSample < numberSamples; iSample++)
@@ -379,34 +392,53 @@ public class C45ItPartiallyConsolidatedPruneableClassifierTree extends C45Partia
 			index++;
 
 		}
-		System.out.println("END buildTree");
-
 	}
 
 	public void addSonOrderedByValue(ArrayList<Object[]> list, Object[] son) {
 		if (list.size() == 0) {
-			list.add(0, son);
+			list.add(son);
 		} else {
-
+			int i;
 			double sonValue = (double) son[3];
-			for (int i = 0; i < list.size(); i++) {
-
+			for (i = 0; i < list.size(); i++) {
 				double parentValue = (double) list.get(i)[3];
 				if (parentValue < sonValue) {
 					list.add(i, son);
 					break;
 				}
-
-				if (i == list.size() - 1) {
-					list.add(son);
-					break;
-				}
-
 			}
+			if (i == list.size())
+				list.add(son);
 		}
-
 	}
 
-	
+	/**
+	 * Help method for printing tree structure.
+	 * 
+	 * @param depth the current depth
+	 * @param text  for outputting the structure
+	 * @throws Exception if something goes wrong
+	 */
+	public void dumpTree(int depth, StringBuffer text) throws Exception {
 
+		int i, j;
+
+		for (i = 0; i < m_sons.length; i++) {
+			text.append("\n");
+			;
+			for (j = 0; j < depth; j++) {
+				text.append("|   ");
+			}
+			text.append("[" + m_order + "] ");
+			text.append(m_localModel.leftSide(m_train));
+			text.append(m_localModel.rightSide(i, m_train));
+			if (m_sons[i].isLeaf()) {
+				text.append(": ");
+				text.append("[" + ((C45ItPartiallyConsolidatedPruneableClassifierTree)m_sons[i]).m_order + "] ");
+				text.append(m_localModel.dumpLabel(i, m_train));
+			} else {
+				m_sons[i].dumpTree(depth + 1, text);
+			}
+		}
+	}
 }

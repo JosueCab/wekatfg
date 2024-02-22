@@ -1,11 +1,15 @@
 package weka.classifiers.trees.j48PartiallyConsolidated;
 
+import java.util.Enumeration;
+import java.util.Vector;
+
 import weka.classifiers.trees.j48.C45ModelSelection;
 import weka.classifiers.trees.j48.C45PruneableClassifierTree;
 import weka.classifiers.trees.j48.ClassifierSplitModel;
 import weka.classifiers.trees.j48.ClassifierTree;
 import weka.classifiers.trees.j48.ModelSelection;
 import weka.classifiers.trees.j48.NoSplit;
+import weka.core.AdditionalMeasureProducer;
 import weka.core.Instances;
 
 /**
@@ -16,7 +20,7 @@ import weka.core.Instances;
  * @author Jesús M. Pérez (txus.perez@ehu.eus)
  * @version $Revision: 0.3 $
  */
-public class C45PruneableClassifierTreeExtended extends C45PruneableClassifierTree {
+public class C45PruneableClassifierTreeExtended extends C45PruneableClassifierTree implements AdditionalMeasureProducer {
 
 	/** for serialization */
 	private static final long serialVersionUID = -4396836285687129766L;
@@ -164,5 +168,107 @@ public class C45PruneableClassifierTreeExtended extends C45PruneableClassifierTr
 			replaceWithSubtree(newTree);
 			newTree = null;
 		}
+	}
+
+	  /**
+	   * Returns the size of the tree
+	   * 
+	   * @return the size of the tree
+	   */
+	  public double measureTreeSize() {
+	    return numNodes();
+	  }
+
+	  /**
+	   * Returns the number of leaves
+	   * 
+	   * @return the number of leaves
+	   */
+	  public double measureNumLeaves() {
+	    return numLeaves();
+	  }
+
+	  /**
+	   * Returns the number of rules (same as number of leaves)
+	   * 
+	   * @return the number of rules
+	   */
+	  public double measureNumRules() {
+	    return numLeaves();
+	  }
+
+	  /**
+	   * Returns the number of internal nodes
+	   * (those that give the explanation of the classification)
+	   * 
+	   * @return the number of internal nodes
+	   */
+	  public double measureNumInnerNodes() {
+	    return numNodes() - numLeaves();
+	  }
+
+	  /**
+	   * Returns the average length of the explanation of the classification
+	   * (as the average length of all the branches from root to leaf) 
+	   * 
+	   * @return the average length of the explanation
+	   */
+	  public double measureExplanationLength() {
+		  return averageBranchesLength(false);
+	  }
+
+	  /**
+	   * Returns the weighted length of the explanation of the classification
+	   * (as the average length of all the branches from root to leaf)
+	   * taking into account the proportion of instances fallen into each leaf
+	   * 
+	   * @return the weighted length of the explanation
+	   */
+	  public double measureWeightedExplanationLength() {
+		  return averageBranchesLength(true);
+	  }
+
+	/**
+	 * Returns the value of the named measure
+	 * 
+	 * @param additionalMeasureName the name of the measure to query for its value
+	 * @return the value of the named measure
+	 * @throws IllegalArgumentException if the named measure is not supported
+	 */
+	@Override
+	public double getMeasure(String additionalMeasureName) {
+		if (additionalMeasureName.compareToIgnoreCase("measureNumRules") == 0) {
+			return measureNumRules();
+		} else if (additionalMeasureName.compareToIgnoreCase("measureTreeSize") == 0) {
+			return measureTreeSize();
+		} else if (additionalMeasureName.compareToIgnoreCase("measureNumLeaves") == 0) {
+			return measureNumLeaves();
+		} else if (additionalMeasureName.compareToIgnoreCase("measureNumInnerNodes") == 0) {
+			return measureNumInnerNodes();
+		} else if (additionalMeasureName.compareToIgnoreCase("measureExplanationLength") == 0) {
+			return measureExplanationLength();
+		} else if (additionalMeasureName.compareToIgnoreCase("measureWeightedExplanationLength") == 0) {
+			return measureWeightedExplanationLength();
+		} else {
+			throw new IllegalArgumentException(additionalMeasureName
+					+ " not supported (j48)");
+		}
+	}
+
+	/**
+	 * Returns an enumeration of the additional measure names
+	 * 
+	 * @return an enumeration of the measure names
+	 */
+	@Override
+	public Enumeration<String> enumerateMeasures() {
+		Vector<String> newVector = new Vector<String>(6);
+		newVector.addElement("measureTreeSize");
+		newVector.addElement("measureNumLeaves");
+		newVector.addElement("measureNumRules");
+		newVector.addElement("measureNumInnerNodes");
+		newVector.addElement("measureExplanationLength");
+		newVector.addElement("measureWeightedExplanationLength");
+		return newVector.elements();
 	}
 }
