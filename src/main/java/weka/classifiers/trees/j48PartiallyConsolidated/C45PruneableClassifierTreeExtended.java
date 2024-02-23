@@ -31,6 +31,7 @@ public class C45PruneableClassifierTreeExtended extends C45PruneableClassifierTr
 	/**
 	 * Constructor.
 	 * @param toSelectLocModel selection method for local splitting model
+	 * @param baseModelToForceDecision model selection method to force the consolidated decision
 	 * @param pruneTree true if the tree is to be pruned
 	 * @param cf the confidence factor for pruning
 	 * @param raiseTree true if subtree raising has to be performed
@@ -38,7 +39,8 @@ public class C45PruneableClassifierTreeExtended extends C45PruneableClassifierTr
 	 * @param collapseTree true if collapse has to be done
 	 * @throws Exception if something goes wrong
 	 */
-	public C45PruneableClassifierTreeExtended(ModelSelection toSelectLocModel, C45ModelSelectionExtended baseModelToForceDecision,
+	public C45PruneableClassifierTreeExtended(ModelSelection toSelectLocModel,
+			C45ModelSelectionExtended baseModelToForceDecision,
 		    boolean pruneTree,float cf,
 		    boolean raiseTree,
 		    boolean cleanup,
