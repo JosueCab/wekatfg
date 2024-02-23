@@ -34,6 +34,7 @@ import weka.classifiers.trees.J48;
 import weka.core.*;
 import weka.core.TechnicalInformation.Field;
 import weka.core.TechnicalInformation.Type;
+import weka.core.matrix.DoubleVector;
 
 /**
  <!-- globalinfo-start -->
@@ -664,7 +665,7 @@ public class Bagging
     Vector<String> newVector = new Vector<String>(1);
     newVector.addElement("measureOutOfBagError");
     if (m_Classifier instanceof J48) {
-    	String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+    	String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum", "Mdn", "Dev"};
     	ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
     	String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
     	ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
@@ -693,7 +694,7 @@ public class Bagging
 		  return measureOutOfBagError();
 	  } else if (m_Classifier instanceof J48) {
 		  double res;
-		  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+		  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum", "Mdn", "Dev"};
 		  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 		  String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
 		  ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
@@ -708,14 +709,22 @@ public class Bagging
 						  vValues[i] = ((AdditionalMeasureProducer)(m_Classifiers[i])).getMeasure(sms);
 					  int iop = metaOperations.indexOf(op);
 					  switch (iop) {
-					  case 0:
+					  case 0: // Avg
 						  res = Utils.mean(vValues); break;
-					  case 1:
+					  case 1: // Min
 						  res = vValues[Utils.minIndex(vValues)]; break;
-					  case 2:
+					  case 2: // Max
 						  res = vValues[Utils.maxIndex(vValues)]; break;
-					  case 3:
+					  case 3: // Sum
 						  res = Utils.sum(vValues); break;
+					  case 4: // Mdn
+						  // // TODO median could be a method to insert in the class 'DoubleVector'
+						  DoubleVector auxValues = new DoubleVector(vValues);
+						  auxValues.sort();
+						  res = auxValues.get(((m_Classifiers.length+1)/2)-1);
+						  break;
+					  case 5: // Dev 
+						  res = Math.sqrt(Utils.variance(vValues)); break;
 					  default:
 						  throw new IllegalArgumentException(additionalMeasureName 
 								  + " not supported (Bagging)");
@@ -1141,7 +1150,7 @@ public class Bagging
       text.append("\n--- of the whole multiple classifier ---");
       text.append("\n----------------------------------------\n");
 			
-	  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+	  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum", "Mdn", "Dev"};
 	  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 	  String[] stTreeMeasures = new String[]{"NumLeaves", /*"NumRules",*/ "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
 	  ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));

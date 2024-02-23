@@ -52,6 +52,7 @@ import weka.core.TechnicalInformation;
 import weka.core.TechnicalInformationHandler;
 import weka.core.Utils;
 import weka.core.WeightedInstancesHandler;
+import weka.core.matrix.DoubleVector;
 import weka.core.TechnicalInformation.Field;
 import weka.core.TechnicalInformation.Type;
 
@@ -693,7 +694,7 @@ public class J48PartiallyConsolidated
 				+ "\n--- of the whole multiple classifier ---\n";
 			st += line;
 			
-			String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+			String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum", "Mdn", "Dev"};
 			ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 			String[] stTreeMeasures = new String[]{"NumLeaves", /*"NumRules",*/ "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
 			ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
@@ -779,7 +780,7 @@ public class J48PartiallyConsolidated
 
 		Vector<String> newVector = new Vector<String>(1);
 		newVector.addAll(Collections.list(new J48Consolidated().enumerateMeasures()));
-		String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+		String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum", "Mdn", "Dev"};
 		ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 		String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
 		ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
@@ -807,7 +808,7 @@ public class J48PartiallyConsolidated
 			return super.getMeasure(additionalMeasureName);
 		} else {
 			double res;
-			String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum"};
+			String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum", "Mdn", "Dev"};
 			ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 			String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
 			ArrayList<String> treeMeasures = new ArrayList<>(Arrays.asList(stTreeMeasures));
@@ -823,14 +824,22 @@ public class J48PartiallyConsolidated
 						}
 						int iop = metaOperations.indexOf(op);
 						switch (iop) {
-						case 0:
+						case 0: // Avg
 							res = Utils.mean(vValues); break;
-						case 1:
+						case 1: // Min
 							res = vValues[Utils.minIndex(vValues)]; break;
-						case 2:
+						case 2: // Max
 							res = vValues[Utils.maxIndex(vValues)]; break;
-						case 3:
+						case 3: // Sum
 							res = Utils.sum(vValues); break;
+						case 4: // Mdn
+							// // TODO median could be a method to insert in the class 'DoubleVector'
+							DoubleVector auxValues = new DoubleVector(vValues);
+							auxValues.sort();
+							res = auxValues.get(((m_Classifiers.length+1)/2)-1);
+							break;
+						case 5: // Dev 
+							res = Math.sqrt(Utils.variance(vValues)); break;
 						default:
 							throw new IllegalArgumentException(additionalMeasureName 
 									+ " not supported (Bagging)");
