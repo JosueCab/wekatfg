@@ -50,7 +50,6 @@ import weka.core.TechnicalInformation.Type;
 import weka.core.TechnicalInformationHandler;
 import weka.core.Utils;
 import weka.core.WeightedInstancesHandler;
-import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 
 /**
@@ -894,22 +893,22 @@ public class J48 extends AbstractClassifier implements OptionHandler, Drawable,
    */
   @Override
   public double getMeasure(String additionalMeasureName) {
-    if (additionalMeasureName.compareToIgnoreCase("measureNumRules") == 0) {
-      return measureNumRules();
-    } else if (additionalMeasureName.compareToIgnoreCase("measureTreeSize") == 0) {
-      return measureTreeSize();
-    } else if (additionalMeasureName.compareToIgnoreCase("measureNumLeaves") == 0) {
-      return measureNumLeaves();
-    } else if (additionalMeasureName.compareToIgnoreCase("measureNumInnerNodes") == 0) {
-        return measureNumInnerNodes();
-    } else if (additionalMeasureName.compareToIgnoreCase("measureExplanationLength") == 0) {
-        return measureExplanationLength();
-    } else if (additionalMeasureName.compareToIgnoreCase("measureWeightedExplanationLength") == 0) {
-        return measureWeightedExplanationLength();
-    } else {
-      throw new IllegalArgumentException(additionalMeasureName
-        + " not supported (j48)");
-    }
+	  if (additionalMeasureName.compareToIgnoreCase("measureNumRules") == 0) {
+		  return measureNumRules();
+	  } else if (additionalMeasureName.compareToIgnoreCase("measureTreeSize") == 0) {
+		  return measureTreeSize();
+	  } else if (additionalMeasureName.compareToIgnoreCase("measureNumLeaves") == 0) {
+		  return measureNumLeaves();
+	  } else if (additionalMeasureName.compareToIgnoreCase("measureNumInnerNodes") == 0) {
+		  return measureNumInnerNodes();
+	  } else if (additionalMeasureName.compareToIgnoreCase("measureExplanationLength") == 0) {
+		  return measureExplanationLength();
+	  } else if (additionalMeasureName.compareToIgnoreCase("measureWeightedExplanationLength") == 0) {
+		  return measureWeightedExplanationLength();
+	  } else {
+		  throw new IllegalArgumentException(additionalMeasureName
+				  + " not supported (j48)");
+	  }
   }
 
   /**

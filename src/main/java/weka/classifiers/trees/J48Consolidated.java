@@ -24,6 +24,7 @@
 
 package weka.classifiers.trees;
 
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Random;
 import java.util.Vector;
@@ -531,7 +532,6 @@ TechnicalInformationHandler {
 						Math.log(1 - bagBySampleClassRatioVector[iMostDisfavorClass]));
 			System.out.println("The number of samples to guarantee at least a coverage of " +
 					Utils.doubleToString(100*coverage,0) + "% is " + numberSamples + ".");
-			m_numberSamplesByCoverage = numberSamples;
 			if (numberSamples < 3){
 				numberSamples = 3;
 				System.out.println("(*) Forced the number of samples to be 3!!!");
@@ -540,6 +540,7 @@ TechnicalInformationHandler {
 		} else // m_RMnumberSamplesHowToSet == NumberSamples_FixedValue 
 			// The number of samples has been set by parameter
 			numberSamples = (int)m_RMnumberSamples;
+		m_numberSamplesByCoverage = numberSamples;
 
 		// Calculate the true coverage achieved
 		m_trueCoverage = (double)0.0;
@@ -1663,8 +1664,8 @@ TechnicalInformationHandler {
 		Vector<String> measures = new Vector<String>();
 		while (enm.hasMoreElements())
 			measures.add(enm.nextElement());
-		if (m_RMnumberSamplesHowToSet == NumberSamples_BasedOnCoverage)
-			measures.add("measureNumberSamplesByCoverage");
+		//if (m_RMnumberSamplesHowToSet == NumberSamples_BasedOnCoverage)
+		measures.add("measureNumberSamplesByCoverage");
 		measures.add("measureTrueCoverage");
 		return measures.elements();
 	}
@@ -1676,13 +1677,15 @@ TechnicalInformationHandler {
 	 * @throws IllegalArgumentException if the named measure is not supported
 	 */
 	public double getMeasure(String additionalMeasureName) {
-		if (additionalMeasureName.compareToIgnoreCase("measureTrueCoverage") == 0)
+		if(Collections.list(new J48().enumerateMeasures()).contains(additionalMeasureName)) {
+			return super.getMeasure(additionalMeasureName);
+		} else if (additionalMeasureName.compareToIgnoreCase("measureTrueCoverage") == 0) {
 			return measureTrueCoverage();
-		else
-			if (additionalMeasureName.compareToIgnoreCase("measureNumberSamplesByCoverage") == 0)
-				return measureNumberSamplesByCoverage();
-			else
-				return super.getMeasure(additionalMeasureName);
+		} else if (additionalMeasureName.compareToIgnoreCase("measureNumberSamplesByCoverage") == 0) {
+			return measureNumberSamplesByCoverage();
+		} else
+			throw new IllegalArgumentException(additionalMeasureName 
+					+ " not supported (J48Consolidated)");
 	}
 
 	/**

@@ -677,6 +677,42 @@ public class Bagging
     return newVector.elements();
   }
   
+	/**
+	 * 	Returns the value of a named aggregate measure associated to
+	 *  a meta-classifier based on a set of decision trees.
+	 *
+	 * @param singleMeasureName the name of the measure to query for its value
+	 * @param iop identifies the type of aggregated operation
+	 * @return the value of the named measure
+	 * @throws IllegalArgumentException if the named measure is not supported
+	 */
+	public double getMetaAggregateMeasure(String singleMeasureName, int iop) {
+		double res = (double)0.0;
+		double[] vValues = new double[m_Classifiers.length];
+		for(int i = 0; i < m_Classifiers.length; i++) {
+			vValues[i] = ((AdditionalMeasureProducer)(m_Classifiers[i])).getMeasure(singleMeasureName);
+		}
+		switch (iop) {
+			case 0: // Avg
+				res = Utils.mean(vValues); break;
+			case 1: // Min
+				res = vValues[Utils.minIndex(vValues)]; break;
+			case 2: // Max
+				res = vValues[Utils.maxIndex(vValues)]; break;
+			case 3: // Sum
+				res = Utils.sum(vValues); break;
+			case 4: // Mdn
+				// // TODO median could be a method to insert in the class 'DoubleVector'
+				DoubleVector auxValues = new DoubleVector(vValues);
+				auxValues.sort();
+				res = auxValues.get(((m_Classifiers.length+1)/2)-1);
+				break;
+			case 5: // Dev 
+				res = Math.sqrt(Utils.variance(vValues)); break;
+		}
+		return res;
+	}
+
   /**
    * Returns the value of the named measure.
    * In the case of measureTreeSize, measureNumLeaves, measureNumRules,
@@ -693,7 +729,6 @@ public class Bagging
 	  if (additionalMeasureName.equalsIgnoreCase("measureOutOfBagError")) {
 		  return measureOutOfBagError();
 	  } else if (m_Classifier instanceof J48) {
-		  double res;
 		  String[] stMetaOperations = new String[]{"Avg", "Min", "Max", "Sum", "Mdn", "Dev"};
 		  ArrayList<String> metaOperations = new ArrayList<>(Arrays.asList(stMetaOperations));
 		  String[] stTreeMeasures = new String[]{"NumLeaves", "NumRules", "NumInnerNodes", "ExplanationLength", "WeightedExplanationLength"};
@@ -703,35 +738,12 @@ public class Bagging
 			  for(String ms: treeMeasures) {
 				  String mtms = "measure" + op + ms;
 				  if (additionalMeasureName.equalsIgnoreCase(mtms)) {
-					  double[] vValues = new double[m_Classifiers.length];
 					  String sms = "measure" + ms;
-					  for(int i = 0; i < m_Classifiers.length; i++)
-						  vValues[i] = ((AdditionalMeasureProducer)(m_Classifiers[i])).getMeasure(sms);
 					  int iop = metaOperations.indexOf(op);
-					  switch (iop) {
-					  case 0: // Avg
-						  res = Utils.mean(vValues); break;
-					  case 1: // Min
-						  res = vValues[Utils.minIndex(vValues)]; break;
-					  case 2: // Max
-						  res = vValues[Utils.maxIndex(vValues)]; break;
-					  case 3: // Sum
-						  res = Utils.sum(vValues); break;
-					  case 4: // Mdn
-						  // // TODO median could be a method to insert in the class 'DoubleVector'
-						  DoubleVector auxValues = new DoubleVector(vValues);
-						  auxValues.sort();
-						  res = auxValues.get(((m_Classifiers.length+1)/2)-1);
-						  break;
-					  case 5: // Dev 
-						  res = Math.sqrt(Utils.variance(vValues)); break;
-					  default:
-						  throw new IllegalArgumentException(additionalMeasureName 
-								  + " not supported (Bagging)");
-					  }
-					  return res;
+					  return getMetaAggregateMeasure(sms, iop);
 				  }
 			  }
+		  // Measures associated to a single decision tree are not defined
 		  return Double.NaN;
 	  }
 	  else throw new IllegalArgumentException(additionalMeasureName 
