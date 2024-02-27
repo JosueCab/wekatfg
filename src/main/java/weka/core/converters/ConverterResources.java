@@ -52,6 +52,8 @@ public class ConverterResources {
     + ","
     + weka.core.converters.DatabaseConverter.class.getName()
     + ","
+    + weka.core.converters.KEELLoader.class.getName() // In order to be accepted in Experimenter as a core loader
+    + ","
     // + weka.core.converters.LibSVMLoader.class.getName() + ","
     // + weka.core.converters.MatlabLoader.class.getName() + ","
     // + weka.core.converters.SVMLightLoader.class.getName() + ","
