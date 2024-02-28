@@ -95,7 +95,8 @@ OptionHandler, AdditionalMeasureProducer, RevisionHandler {
 			Object[] key = new Object[seKey.length + 3];
 			//key[0] = Utils.backQuoteChars(m_Instances.relationName()); // (Almost) always 'unknow'
 			// In '3.imbalanced-preprocessed' context, for all databases the names of the samples are the same.
-			key[0] = (i_context == 3) ? i_context + "-" + datasetDir : i_context + "-" + m_fDataset.getName();
+			//key[0] = (i_context == 3) ? i_context + "-" + datasetDir : i_context + "-" + m_fDataset.getName();
+			key[0] = i_context + "-" + datasetDir;
 			key[1] = "" + run;
 			key[2] = "" + (fold + 1);
 			System.arraycopy(seKey, 0, key, 3, seKey.length);
