@@ -26,6 +26,7 @@ import weka.core.Utils;
 import weka.core.xml.KOML;
 import weka.experiment.CSVResultListener;
 import weka.experiment.ClassifierSplitEvaluator;
+import weka.experiment.CrossValidation1x5KEELResultProducer;
 import weka.experiment.CrossValidationResultProducer;
 import weka.experiment.DatabaseResultListener;
 import weka.experiment.Experiment;
@@ -183,6 +184,7 @@ public class SimpleSetupPanel
   protected static String TYPE_CROSSVALIDATION_TEXT = ("Cross-validation");
   protected static String TYPE_RANDOMSPLIT_TEXT = ("Train/Test Percentage Split (data randomized)");
   protected static String TYPE_FIXEDSPLIT_TEXT = ("Train/Test Percentage Split (order preserved)");
+  protected static String TYPE_1x5CV_KEEL_TEXT = ("1x5CV tra/tst KEEL samples");
 
   /** The panel for configuring selected datasets */
   protected DatasetListPanel m_DatasetListPanel = new DatasetListPanel();
@@ -475,6 +477,7 @@ public class SimpleSetupPanel
     m_ExperimentTypeCBox.addItem(TYPE_CROSSVALIDATION_TEXT);
     m_ExperimentTypeCBox.addItem(TYPE_RANDOMSPLIT_TEXT);
     m_ExperimentTypeCBox.addItem(TYPE_FIXEDSPLIT_TEXT);
+    m_ExperimentTypeCBox.addItem(TYPE_1x5CV_KEEL_TEXT);
 
     m_ExperimentTypeCBox.addActionListener(new ActionListener() {
 	public void actionPerformed(ActionEvent e) {
@@ -1059,8 +1062,29 @@ public class SimpleSetupPanel
 
     if (m_Exp == null) return;
 
+    // 5x5CV_KEEL
+    if (m_ExperimentTypeCBox.getSelectedItem() == TYPE_1x5CV_KEEL_TEXT) {
+    	m_numRepetitions = 1;
+    	m_numFolds = 5;
+        m_NumberOfRepetitionsTField.setEnabled(false);
+        m_ExperimentParameterTField.setEnabled(false);
+        m_ExpClassificationRBut.setEnabled(false);
+        m_ExpRegressionRBut.setEnabled(false);
+        m_DatasetListPanel.set1x5CV_KEEL_expType(true);
+    }
+//    else {
+//    	m_numRepetitions = 10;
+//    	m_numFolds = 10;
+//        m_NumberOfRepetitionsTField.setEnabled(true);
+//        m_ExperimentParameterTField.setEnabled(true);
+//        m_ExpClassificationRBut.setEnabled(true);
+//        m_ExpRegressionRBut.setEnabled(true);
+//        m_DatasetListPanel.set1x5CV_KEEL_expType(false);
+//    }
+
     // update parameter ui
-    if (m_ExperimentTypeCBox.getSelectedItem() == TYPE_CROSSVALIDATION_TEXT) {
+    if ((m_ExperimentTypeCBox.getSelectedItem() == TYPE_CROSSVALIDATION_TEXT) ||
+    		(m_ExperimentTypeCBox.getSelectedItem() == TYPE_1x5CV_KEEL_TEXT)) {
       m_ExperimentParameterLabel.setText("Number of folds:");
       m_ExperimentParameterTField.setText("" + m_numFolds);
     } else {
@@ -1076,7 +1100,7 @@ public class SimpleSetupPanel
       m_Exp.setRunUpper(1);
     } else {
       m_NumberOfRepetitionsTField.setText("" + m_numRepetitions);
-      m_NumberOfRepetitionsTField.setEnabled(true);
+      m_NumberOfRepetitionsTField.setEnabled(!(m_ExperimentTypeCBox.getSelectedItem() == TYPE_1x5CV_KEEL_TEXT));
       m_Exp.setRunLower(1);
       m_Exp.setRunUpper(m_numRepetitions);
     }
@@ -1092,8 +1116,13 @@ public class SimpleSetupPanel
     }
     
     // build new ResultProducer
-    if (m_ExperimentTypeCBox.getSelectedItem() == TYPE_CROSSVALIDATION_TEXT) {
-      CrossValidationResultProducer cvrp = new CrossValidationResultProducer();
+    if ((m_ExperimentTypeCBox.getSelectedItem() == TYPE_CROSSVALIDATION_TEXT) ||
+    		(m_ExperimentTypeCBox.getSelectedItem() == TYPE_1x5CV_KEEL_TEXT)) {
+      CrossValidationResultProducer cvrp;
+      if (m_ExperimentTypeCBox.getSelectedItem() == TYPE_CROSSVALIDATION_TEXT)
+    	  cvrp = new CrossValidationResultProducer();
+      else
+    	  cvrp = new CrossValidation1x5KEELResultProducer();
       cvrp.setNumFolds(m_numFolds);
       cvrp.setSplitEvaluator(se);
       

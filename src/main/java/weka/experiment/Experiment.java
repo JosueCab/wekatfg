@@ -22,7 +22,6 @@
 package weka.experiment;
 
 import java.beans.PropertyDescriptor;
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -570,6 +569,8 @@ public class Experiment implements Serializable, OptionHandler, RevisionHandler 
       }
       m_CurrentInstances = data;
       m_ResultProducer.setInstances(m_CurrentInstances);
+      if (m_ResultProducer instanceof CrossValidation1x5KEELResultProducer)
+    	  ((CrossValidation1x5KEELResultProducer)m_ResultProducer).setDataset(currentFile);
     }
 
     m_ResultProducer.doRun(m_RunNumber);
