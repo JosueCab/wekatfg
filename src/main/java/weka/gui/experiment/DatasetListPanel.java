@@ -101,8 +101,8 @@ public class DatasetListPanel extends JPanel implements ActionListener {
   protected ConverterFileChooser m_FileChooser = new ConverterFileChooser(
     ExperimenterDefaults.getInitialDatasetsDirectory());
 
-  /** Indicates if the user has selected the experiment type TYPE_1x5CV_KEEL_TEXT */
-  protected boolean m_1x5CV_KEEL_expType = false;
+  /** Indicates if the user has selected an experiment with training/test KEEL samples */
+  protected boolean m_TraTstKEELSamples = false;
 
   /**
    * Creates the dataset list panel with the given experiment.
@@ -146,7 +146,7 @@ public class DatasetListPanel extends JPanel implements ActionListener {
 
     MouseListener panelMouseListener = new MouseAdapter() {
     	public void mouseEntered(MouseEvent e) {
-    		if (m_1x5CV_KEEL_expType) {
+    		if (m_TraTstKEELSamples) {
         		m_AddBut.setText("Add main path ONLY!");
         		m_AddBut.setToolTipText("Add only the main path where the directories of the 3 data set contexts are located.");
         		m_relativeCheck.setEnabled(false);
@@ -309,15 +309,13 @@ public class DatasetListPanel extends JPanel implements ActionListener {
    * @param directory the directory to get the files for
    * @param files the list to add the files to
    */
-  protected void get1x5CVKEELFilesContext(File directory, Vector<File> files, String st_context, String[] currentDirFiles) {
+  protected void getTraTstKEELSamplesFilesContext(File directory, Vector<File> files, String st_context, String[] currentDirFiles) {
 
 	  try {
 		  File currentSubdir;
 
 		  if (currentDirFiles.length != 1)
 			  System.err.println("Not found '" + st_context + "' data sets folder!");
-		  else
-			  System.out.println("'" + currentDirFiles[0] + "' data sets folder found!");
 		  currentSubdir = new File(directory, currentDirFiles[0]);
 		  File[] contextDatasetsFolders = currentSubdir.listFiles();
 		  int counter = 0;
@@ -335,7 +333,7 @@ public class DatasetListPanel extends JPanel implements ActionListener {
 					  for (FileFilter filter: fileFilters)
 						  if (filter.accept(currentDatasetTraSamples[0])) {
 							  files.addElement(currentDatasetTraSamples[0]);
-							  System.out.println(contextDatasetsFolders[i].getName() + ": " + currentDatasetTraSamples[0].getName());
+							  //System.out.println(contextDatasetsFolders[i].getName() + ": " + currentDatasetTraSamples[0].getName());
 							  counter++;
 							  break;
 						  }
@@ -354,22 +352,46 @@ public class DatasetListPanel extends JPanel implements ActionListener {
    * @param directory the directory to get the files for
    * @param files the list to add the files to
    */
-  protected void get1x5CVKEELFilesRecursively(File directory, Vector<File> files) {
+  protected void getTraTstKEELSamplesFilesRecursively(File directory, Vector<File> files) {
 
 		  String[] currentDirFiles;
+		  String[] currentDir = new String[]{"."};
 		  // Checks if exists '1.standard' folder
 		  currentDirFiles = directory.list((dir, name) -> name.contains("standard"));
-		  get1x5CVKEELFilesContext(directory, files, "standard", currentDirFiles);
+		  if (currentDirFiles.length > 0)
+			  getTraTstKEELSamplesFilesContext(directory, files, "standard", currentDirFiles);
+		  // or if '1.standard' is the parent directory
+		  currentDirFiles = directory.getParentFile().list((dir, name) -> name.contains("standard"));
+		  if (currentDirFiles.length > 0) {
+			  getTraTstKEELSamplesFilesContext(directory, files, "standard", currentDir);
+			  return;
+		  }
 		  
 		  // Checks if exists '2.imbalanced' folder
 		  currentDirFiles = directory.list((dir, name) -> name.contains("imbalanced") && 
 				  !(name.contains("preprocessed") || name.contains("SMOTE")));
-		  get1x5CVKEELFilesContext(directory, files, "imbalanced", currentDirFiles);
+		  if (currentDirFiles.length > 0)
+			  getTraTstKEELSamplesFilesContext(directory, files, "imbalanced", currentDirFiles);
+		  // or if '2.imbalanced' is the parent directory
+		  currentDirFiles = directory.getParentFile().list((dir, name) -> name.contains("imbalanced") && 
+				  !(name.contains("preprocessed") || name.contains("SMOTE")));
+		  if (currentDirFiles.length > 0) {
+			  getTraTstKEELSamplesFilesContext(directory.getParentFile(), files, "imbalanced", currentDir);
+			  return;
+		  }
 
 		  // Checks if exists '3.imbalanced-preprocessed' folder
 		  currentDirFiles = directory.list((dir, name) -> name.contains("imbalanced") && 
 				  (name.contains("preprocessed") || name.contains("SMOTE")));
-		  get1x5CVKEELFilesContext(directory, files, "imbalanced-preprocessed", currentDirFiles);
+		  if (currentDirFiles.length > 0)
+			  getTraTstKEELSamplesFilesContext(directory, files, "imbalanced-preprocessed", currentDirFiles);
+		  // or if '3.imbalanced-preprocessed' is the parent directory
+		  currentDirFiles = directory.getParentFile().list((dir, name) -> name.contains("imbalanced") && 
+				  (name.contains("preprocessed") || name.contains("SMOTE")));
+		  if (currentDirFiles.length > 0) {
+			  getTraTstKEELSamplesFilesContext(directory.getParentFile(), files, "imbalanced-preprocessed", currentDir);
+			  return;
+		  }
   }
 
   /**
@@ -422,8 +444,8 @@ public class DatasetListPanel extends JPanel implements ActionListener {
         } else {
           if (m_FileChooser.getSelectedFile().isDirectory()) {
             Vector<File> files = new Vector<File>();
-            if (m_1x5CV_KEEL_expType) {
-            	get1x5CVKEELFilesRecursively(m_FileChooser.getSelectedFile(), files);
+            if (m_TraTstKEELSamples) {
+            	getTraTstKEELSamplesFilesRecursively(m_FileChooser.getSelectedFile(), files);
             	for (File f: files)
             		m_Exp.getDatasets().addElement(f);
             } else {
@@ -445,7 +467,7 @@ public class DatasetListPanel extends JPanel implements ActionListener {
                 }
             }
           } else {
-        	  if (!m_1x5CV_KEEL_expType) {
+        	  if (!m_TraTstKEELSamples) {
                   File temp = m_FileChooser.getSelectedFile();
                   if (useRelativePaths) {
                     try {
@@ -547,12 +569,12 @@ public class DatasetListPanel extends JPanel implements ActionListener {
   }
 
   /**
-   * Sets if the user has selected the experiment type TYPE_1x5CV_KEEL_TEXT or not
+   * Sets if the user has selected a experiment with training/test KEEL samples or not
    * 
-   * @param b indicates if the experiment type is TYPE_1x5CV_KEEL_TEXT
+   * @param b indicates if the experiment uses training/test KEEL samples or not
    */
-  protected void set1x5CV_KEEL_expType(boolean b) {
-	  m_1x5CV_KEEL_expType = b;
+  protected void setTraTstKEELSamples(boolean b) {
+	  m_TraTstKEELSamples = b;
   }
 
 }

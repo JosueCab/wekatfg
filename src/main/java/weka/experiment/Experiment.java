@@ -569,11 +569,14 @@ public class Experiment implements Serializable, OptionHandler, RevisionHandler 
       }
       m_CurrentInstances = data;
       m_ResultProducer.setInstances(m_CurrentInstances);
-      if (m_ResultProducer instanceof CrossValidation1x5KEELResultProducer)
+      if ( (m_ResultProducer instanceof CrossValidation1x5KEELResultProducer) ||
+    		  (m_ResultProducer instanceof CrossValidationKEELFromTraTstResultProducer) )
     	  ((CrossValidation1x5KEELResultProducer)m_ResultProducer).setDataset(currentFile);
+      if (m_ResultProducer instanceof CrossValidationKEELFromTraTstResultProducer)
+    	  ((CrossValidationKEELFromTraTstResultProducer)m_ResultProducer).completeDatawithTestSample();
     }
 
-    m_ResultProducer.doRun(m_RunNumber);
+   	m_ResultProducer.doRun(m_RunNumber);
 
     advanceCounters();
   }

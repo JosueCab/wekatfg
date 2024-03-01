@@ -362,6 +362,7 @@ public class CrossValidationResultProducer implements ResultProducer,
   @Override
   public void doRun(int run) throws Exception {
 
+	  System.out.println("CrossValidationResultProducer:doRun(" + run + ")");
     if (getRawOutput()) {
       if (m_ZipDest == null) {
         m_ZipDest = new OutputZipper(m_OutputFile);
