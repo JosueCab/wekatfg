@@ -95,7 +95,6 @@ public class CrossValidation1x5KEELResultProducer extends CrossValidationResultP
 	 */
 	@Override
 	public void doRun(int run) throws Exception {
-		  System.out.println("CrossValidation1x5KEELResultProducer:doRun(" + run + ")");
 
 		if (getRawOutput()) {
 			if (m_ZipDest == null) {
@@ -153,8 +152,6 @@ public class CrossValidation1x5KEELResultProducer extends CrossValidationResultP
 							+ "are not compatible:\n" + train.equalHeadersMsg(test));
 				}
 				try {
-					System.out.println("Run("+run+") Fold("+fold+"): "+ m_iContext + "-" + m_dirDB + ": train size: " + train.numInstances());
-					System.out.println("Run("+run+") Fold("+fold+"): "+ m_iContext + "-" + m_dirDB + ": test  size: " + test.numInstances());
 					Object[] seResults = m_SplitEvaluator.getResult(train, test);
 					Object[] results = new Object[seResults.length + 1];
 					results[0] = getTimestamp();

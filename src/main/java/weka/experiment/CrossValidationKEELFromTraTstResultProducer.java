@@ -40,15 +40,12 @@ public class CrossValidationKEELFromTraTstResultProducer extends CrossValidation
 			throw new WekaException("Train and test set (= " + filename + ") "
 					+ "are not compatible:\n" + m_Instances.equalHeadersMsg(test));
 		}
-		System.out.println(m_iContext + "-" + m_dirDB + ": train size: " + m_Instances.numInstances());
-		System.out.println(m_iContext + "-" + m_dirDB + ": test  size: " + test.numInstances());
 		m_Instances.addAll(test);
-		System.out.println(m_iContext + "-" + m_dirDB + ": whole size: " + m_Instances.numInstances());
 	}
 
 	@Override
 	public void doRun(int run) throws Exception {
-		System.out.println("CrossValidationKEELFromTraTstResultProducer:doRun(" + run + ")");
+
 		if (getRawOutput()) {
 			if (m_ZipDest == null) {
 				m_ZipDest = new OutputZipper(m_OutputFile);
@@ -79,8 +76,6 @@ public class CrossValidationKEELFromTraTstResultProducer extends CrossValidation
 			if (m_ResultListener.isResultRequired(this, key)) {
 				Instances train = runInstances.trainCV(m_NumFolds, fold, random);
 				Instances test = runInstances.testCV(m_NumFolds, fold);
-				System.out.println("Run("+run+") Fold("+fold+"): "+ m_iContext + "-" + m_dirDB + ": train size: " + train.numInstances());
-				System.out.println("Run("+run+") Fold("+fold+"): "+ m_iContext + "-" + m_dirDB + ": test  size: " + test.numInstances());
 				try {
 					Object[] seResults = m_SplitEvaluator.getResult(train, test);
 					Object[] results = new Object[seResults.length + 1];
