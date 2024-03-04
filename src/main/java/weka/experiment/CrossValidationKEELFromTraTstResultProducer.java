@@ -45,6 +45,8 @@ public class CrossValidationKEELFromTraTstResultProducer extends CrossValidation
 					+ "are not compatible:\n" + m_Instances.equalHeadersMsg(test));
 		}
 		m_Instances.addAll(test);
+		String DBname = m_iContext + "-" + m_dirDB;
+		m_Instances.setRelationName(DBname);
 	}
 
 	@Override
