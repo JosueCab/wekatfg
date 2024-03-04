@@ -12,6 +12,10 @@ import weka.core.WekaException;
 import weka.core.converters.ConverterUtils.DataSource;
 
 /**
+ * "Cross-validation by merging tra/tst KEEL samples" Based on CrossValidation1x5KEELResultProducer, 
+ * it uses the training and test samples already generated (using KEEL format) from the first fold of
+ * a 5-fold cross-validation to rebuild the entire sample and allow the user to run multiple 
+ * 5-fold cross-validation runs.
  * 
  */
 public class CrossValidationKEELFromTraTstResultProducer extends CrossValidation1x5KEELResultProducer {

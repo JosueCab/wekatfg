@@ -12,7 +12,10 @@ import weka.core.WekaException;
 import weka.core.converters.ConverterUtils.DataSource;
 
 /**
- * @author txus
+ * "1x5CV tra/tst KEEL samples" based on CrossValidationResultProducer,
+ * it uses the training and test samples of a 5-fold cross-validation
+ * already generated (using KEEL format) from a set of 96 datasets from
+ * the KEEL repository (https://sci2s.ugr.es/keel/datasets.php). 
  *
  */
 public class CrossValidation1x5KEELResultProducer extends CrossValidationResultProducer {
